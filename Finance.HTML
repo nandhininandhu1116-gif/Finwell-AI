@@ -1,0 +1,1835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FinWell AI</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0f1e;--card:rgba(255,255,255,0.035);--border:rgba(255,255,255,0.07);
+  --text:#e2e8f0;--muted:#64748b;--accent:#3b82f6;--accent2:#7c3aed;
+  --green:#22c55e;--yellow:#eab308;--red:#ef4444;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);min-height:100vh;padding:20px 14px 100px;color:var(--text)}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 60% at 20% 0%,rgba(37,99,235,0.13) 0%,transparent 60%),radial-gradient(ellipse 60% 50% at 80% 100%,rgba(124,58,237,0.10) 0%,transparent 60%);pointer-events:none;z-index:0}
+.container{max-width:880px;margin:auto;position:relative;z-index:1}
+
+/* ── HEADER ── */
+.app-header{text-align:center;margin-bottom:28px}
+.app-logo{display:inline-flex;align-items:center;gap:10px;margin-bottom:4px}
+.app-logo-icon{width:40px;height:40px;background:linear-gradient(135deg,#2563eb,#7c3aed);border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px}
+.app-logo-text{font-size:24px;font-weight:700;background:linear-gradient(135deg,#60a5fa,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.app-tagline{font-size:12px;color:#475569}
+
+/* ── CARD / INPUTS ── */
+.card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:24px;backdrop-filter:blur(14px);margin-bottom:14px}
+input,select,textarea{width:100%;padding:11px 13px;background:rgba(255,255,255,0.055);border:1px solid rgba(255,255,255,0.09);border-radius:9px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;transition:border-color .2s,background .2s;resize:vertical}
+textarea{min-height:52px;max-height:120px}
+select option{background:#1e293b;color:var(--text)}
+input::placeholder,textarea::placeholder{color:#475569}
+input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6;background:rgba(59,130,246,0.07)}
+button{font-family:'DM Sans',sans-serif;font-weight:600;font-size:13px;cursor:pointer;border:none;border-radius:9px;padding:11px 18px;transition:all .18s}
+.btn-primary{background:linear-gradient(135deg,#2563eb,#4f46e5);color:#fff;width:100%;margin-top:10px;font-size:14px;box-shadow:0 4px 14px rgba(37,99,235,0.28)}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(37,99,235,0.38)}
+.btn-secondary{background:rgba(255,255,255,0.06);color:#94a3b8;border:1px solid rgba(255,255,255,0.09);width:100%;margin-top:7px}
+.btn-secondary:hover{background:rgba(255,255,255,0.11);color:var(--text)}
+.btn-danger{background:rgba(220,38,38,0.13);color:#f87171;border:1px solid rgba(220,38,38,0.28)}
+.btn-danger:hover{background:rgba(220,38,38,0.22)}
+.btn-sm{padding:7px 14px;font-size:12px;width:auto;margin:0}
+.btn-row{display:flex;gap:7px;margin-top:14px;flex-wrap:wrap}
+.btn-row button{flex:1;min-width:90px;margin-top:0}
+.field-label{display:block;font-size:11px;font-weight:600;color:#94a3b8;margin-bottom:5px;text-transform:uppercase;letter-spacing:.05em}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-group{display:flex;flex-direction:column}
+.section-title{font-size:17px;font-weight:700;color:#f1f5f9;margin-bottom:5px}
+.section-sub{font-size:13px;color:#64748b;margin-bottom:18px;line-height:1.5}
+.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 11px;border-radius:99px;font-size:11px;font-weight:700;margin-bottom:9px}
+.badge-blue{background:rgba(59,130,246,.13);color:#60a5fa;border:1px solid rgba(59,130,246,.28)}
+.badge-green{background:rgba(34,197,94,.10);color:#4ade80;border:1px solid rgba(34,197,94,.28)}
+.badge-yellow{background:rgba(234,179,8,.10);color:#facc15;border:1px solid rgba(234,179,8,.28)}
+.badge-purple{background:rgba(124,58,237,.13);color:#a78bfa;border:1px solid rgba(124,58,237,.28)}
+
+/* ── TABS ── */
+.outer-nav{display:flex;background:rgba(255,255,255,0.035);border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:4px;margin-bottom:18px;gap:3px;flex-wrap:wrap}
+.outer-tab{flex:1;min-width:70px;padding:9px 6px;border:none;border-radius:10px;background:transparent;color:#64748b;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .18s;display:flex;align-items:center;justify-content:center;gap:4px;text-align:center}
+.outer-tab.active{background:rgba(255,255,255,0.08);color:#f1f5f9;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.06)}
+.outer-tab:hover:not(.active){background:rgba(255,255,255,0.05);color:#cbd5e1}
+.tab-content{display:none;animation:fadeUp .3s ease}
+.tab-content.active{display:block}
+.step-content{display:none}
+.step-content.active{display:block;animation:fadeUp .28s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── FIX 3: LANGUAGE — No flags, clean pill grid ── */
+#langTab .card{max-width:600px;margin:0 auto}
+.lang-hero{text-align:center;padding:8px 0 24px}
+.lang-hero-icon{width:64px;height:64px;background:linear-gradient(135deg,#2563eb,#7c3aed);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 14px;box-shadow:0 0 32px rgba(37,99,235,.3)}
+.lang-hero h2{font-size:20px;color:#f1f5f9;margin-bottom:6px}
+.lang-hero p{font-size:13px;color:#64748b}
+/* Updated: pill-style language grid, no flags */
+.lang-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:20px 0}
+.lang-pill{border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.025);border-radius:11px;padding:14px 12px;cursor:pointer;transition:all .2s;text-align:center;position:relative}
+.lang-pill:hover{border-color:rgba(59,130,246,.4);background:rgba(59,130,246,.07);transform:translateY(-2px)}
+.lang-pill.selected{border-color:#3b82f6;background:rgba(59,130,246,.13);box-shadow:0 0 0 2px rgba(59,130,246,.2)}
+.lang-pill-name{font-size:13px;font-weight:700;color:#f1f5f9;margin-bottom:3px}
+.lang-pill-native{font-size:12px;color:#64748b}
+.lang-pill-check{position:absolute;top:7px;right:7px;width:16px;height:16px;border-radius:50%;background:#3b82f6;color:#fff;font-size:9px;display:none;align-items:center;justify-content:center;font-weight:700}
+.lang-pill.selected .lang-pill-check{display:flex}
+
+/* ── WELCOME ── */
+.welcome-hero{text-align:center;padding:6px 0 18px}
+.welcome-avatar{width:68px;height:68px;background:linear-gradient(135deg,#2563eb,#7c3aed);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px;margin:0 auto 14px;box-shadow:0 0 36px rgba(37,99,235,.28)}
+.welcome-hero h2{font-size:21px;color:#f1f5f9;margin-bottom:5px}
+.welcome-hero p{color:#64748b;font-size:13px;margin-bottom:22px}
+.name-input-wrap{max-width:310px;margin:0 auto 22px}
+.user-type-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;margin-bottom:18px}
+.user-card{border:1px solid rgba(255,255,255,0.07);background:rgba(255,255,255,0.025);border-radius:13px;padding:16px 10px;cursor:pointer;transition:all .2s;text-align:center}
+.user-card:hover{border-color:rgba(59,130,246,.48);background:rgba(59,130,246,.07);transform:translateY(-2px)}
+.user-card.selected{border-color:#3b82f6;background:rgba(59,130,246,.11);box-shadow:0 0 0 2px rgba(59,130,246,.18)}
+.user-card-icon{font-size:28px;margin-bottom:7px}
+.user-card-title{font-weight:700;font-size:13px;color:#f1f5f9;margin-bottom:3px}
+.user-card-desc{font-size:11px;color:#64748b;line-height:1.4}
+.user-pill{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,0.055);border:1px solid rgba(255,255,255,0.09);border-radius:99px;padding:4px 11px 4px 4px;font-size:12px;color:#94a3b8;margin-bottom:14px}
+.user-avatar{width:24px;height:24px;background:linear-gradient(135deg,#2563eb,#7c3aed);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff}
+
+/* ── BANK ── */
+.bank-section{background:rgba(59,130,246,0.05);border:1px solid rgba(59,130,246,0.18);border-radius:13px;padding:16px;margin-bottom:16px}
+.bank-section-title{font-size:12px;font-weight:700;color:#60a5fa;text-transform:uppercase;letter-spacing:.06em;margin-bottom:11px}
+.bank-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:7px;margin-bottom:10px}
+.bank-chip{border:1px solid rgba(255,255,255,0.09);background:rgba(255,255,255,0.03);border-radius:9px;padding:9px 9px 7px;cursor:pointer;transition:all .16s;text-align:center;position:relative}
+.bank-chip:hover{border-color:rgba(59,130,246,.45);background:rgba(59,130,246,.07)}
+.bank-chip.selected{border-color:#3b82f6;background:rgba(59,130,246,.13);box-shadow:0 0 0 2px rgba(59,130,246,.18)}
+.bank-chip-name{font-size:12px;font-weight:700;color:#f1f5f9;margin-bottom:2px}
+.bank-chip-rate{font-size:11px;color:#60a5fa;font-family:'DM Mono',monospace}
+.bank-chip-type{font-size:10px;color:#475569;margin-top:2px}
+.chip-check{position:absolute;top:5px;right:5px;width:14px;height:14px;border-radius:50%;background:#3b82f6;color:#fff;font-size:8px;display:none;align-items:center;justify-content:center}
+.bank-chip.selected .chip-check{display:flex}
+.bank-quick-btns{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}
+.bank-quick-btn{background:none;border:none;color:#3b82f6;font-size:11px;cursor:pointer;padding:0;width:auto;margin:0;font-family:'DM Sans',sans-serif;font-weight:700}
+.bank-quick-btn:hover{text-decoration:underline}
+.bank-quick-btn.red{color:#f87171}
+.selected-rate-bar{display:flex;align-items:center;gap:6px;background:rgba(59,130,246,0.09);border:1px solid rgba(59,130,246,.22);border-radius:7px;padding:7px 11px;margin-top:8px;flex-wrap:wrap;font-size:12px;color:#93c5fd;min-height:36px}
+.rate-tag{background:rgba(59,130,246,.18);border-radius:5px;padding:2px 7px;font-family:'DM Mono',monospace;font-size:11px;font-weight:600;color:#60a5fa}
+.proceed-banner{display:flex;align-items:center;justify-content:space-between;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);border-radius:11px;padding:14px 16px;margin-top:14px;gap:10px;flex-wrap:wrap}
+.proceed-info{font-size:13px;color:#93c5fd}
+
+/* ── COMPARE TABLE ── */
+.compare-wrap{overflow-x:auto;margin-bottom:18px}
+.bank-compare-table{width:100%;border-collapse:collapse;font-size:12px}
+.bank-compare-table th{background:rgba(59,130,246,.13);color:#60a5fa;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:9px 11px;text-align:left}
+.bank-compare-table td{padding:9px 11px;color:#cbd5e1;border-bottom:1px solid rgba(255,255,255,0.04)}
+.bank-compare-table tr:last-child td{border-bottom:none}
+.bank-compare-table tr.best-row td{background:rgba(34,197,94,0.07)!important}
+.bank-compare-table tr:nth-child(odd) td{background:rgba(255,255,255,.018)}
+.best-badge{display:inline-block;background:rgba(34,197,94,.18);color:#4ade80;border:1px solid rgba(34,197,94,.35);border-radius:5px;font-size:9px;font-weight:700;padding:1px 5px;margin-left:5px;vertical-align:middle}
+.emi-bar-wrap{display:flex;align-items:center;gap:7px}
+.emi-bar{height:5px;border-radius:3px;min-width:3px}
+
+/* ── RESULTS ── */
+.result-header{display:flex;align-items:center;gap:18px;background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.055);border-radius:14px;padding:18px;margin-top:20px;margin-bottom:14px}
+.score-circle{width:84px;height:84px;border-radius:50%;border:5px solid;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0}
+.score-number{font-size:26px;font-weight:800;font-family:'DM Mono',monospace;line-height:1}
+.score-label{font-size:10px;color:#64748b}
+.risk-badge{display:inline-block;padding:4px 12px;border-radius:99px;font-weight:700;font-size:12px;margin-bottom:7px}
+.risk-advice{font-size:12px;color:#94a3b8;line-height:1.5}
+.meter-label{display:flex;justify-content:space-between;font-size:10px;color:#475569;margin-bottom:5px}
+.meter-container{width:100%;height:7px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden;margin-bottom:22px}
+.risk-meter-bar{height:100%;border-radius:99px;transition:width 1.2s cubic-bezier(.22,1,.36,1);width:0%}
+.report-table{width:100%;border-collapse:collapse;font-size:12px;font-family:'DM Mono',monospace;margin-bottom:20px}
+.report-table tr{border-bottom:1px solid rgba(255,255,255,0.04)}
+.report-table tr:last-child{border-bottom:none}
+.report-table td{padding:8px 5px;color:#cbd5e1}
+.report-table td:first-child{color:#64748b;width:54%}
+.report-table td:last-child{font-weight:600;color:#f1f5f9}
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}
+.chart-box{background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.055);border-radius:13px;padding:14px}
+.chart-box-title{font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px}
+.insight-card{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border-radius:11px;background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.055);border-left:3px solid;margin-bottom:9px}
+.insight-icon{font-size:19px;flex-shrink:0;margin-top:1px}
+.insight-title{font-weight:700;font-size:12px;margin-bottom:3px}
+.insight-desc{font-size:12px;color:#94a3b8;line-height:1.5}
+
+/* ── FIX 2: AI ANALYSIS BOX — instant skeleton + streaming look ── */
+.ai-box{background:rgba(124,58,237,0.07);border:1px solid rgba(124,58,237,0.22);border-radius:13px;padding:14px 16px;margin-bottom:9px}
+.ai-box-header{display:flex;align-items:center;gap:7px;margin-bottom:9px}
+.ai-dot{width:7px;height:7px;border-radius:50%;background:#a78bfa;animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.38}}
+.ai-label-txt{font-size:11px;font-weight:700;color:#a78bfa;text-transform:uppercase;letter-spacing:.06em}
+.ai-text{font-size:13px;color:#cbd5e1;line-height:1.65;white-space:pre-wrap}
+/* Instant skeleton placeholders */
+.ai-skeleton{display:flex;flex-direction:column;gap:8px;padding:4px 0}
+.ai-skeleton-line{height:12px;border-radius:6px;background:linear-gradient(90deg,rgba(124,58,237,0.15) 25%,rgba(124,58,237,0.28) 50%,rgba(124,58,237,0.15) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite}
+.ai-skeleton-line.short{width:65%}
+.ai-skeleton-line.medium{width:85%}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+/* Instant result flash cards */
+.instant-results{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0;animation:fadeUp .35s ease}
+.instant-card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:14px;text-align:center}
+.instant-card-val{font-size:20px;font-weight:800;font-family:'DM Mono',monospace;margin-bottom:4px}
+.instant-card-lbl{font-size:10px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.instant-card.highlight{border-color:rgba(59,130,246,0.3);background:rgba(59,130,246,0.06)}
+
+/* ── PRE-LOAN ── */
+.plan-section{margin-bottom:20px}
+.plan-section-title{font-size:14px;font-weight:700;color:#f1f5f9;margin-bottom:12px}
+.checklist-item{display:flex;align-items:flex-start;gap:11px;padding:12px 14px;background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.055);border-radius:11px;margin-bottom:8px;cursor:pointer;transition:all .18s}
+.checklist-item.checked{border-color:rgba(34,197,94,.3);background:rgba(34,197,94,0.06)}
+.check-box{width:20px;height:20px;border-radius:6px;border:2px solid rgba(255,255,255,0.15);flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;font-size:11px;transition:all .18s}
+.checklist-item.checked .check-box{background:#22c55e;border-color:#22c55e;color:#fff}
+.check-title{font-size:13px;font-weight:600;color:#e2e8f0;margin-bottom:2px}
+.check-desc{font-size:12px;color:#64748b;line-height:1.45}
+.checklist-item.checked .check-title{color:#4ade80}
+.plan-progress{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:11px;padding:14px 16px;margin-bottom:16px}
+.plan-progress-title{font-size:12px;color:#64748b;margin-bottom:8px}
+.plan-progress-bar-wrap{width:100%;height:7px;background:rgba(255,255,255,0.07);border-radius:99px;overflow:hidden;margin-bottom:6px}
+.plan-progress-bar{height:100%;border-radius:99px;background:linear-gradient(90deg,#22c55e,#3b82f6);transition:width .6s ease}
+.plan-progress-label{font-size:12px;font-weight:700;color:#4ade80}
+.savings-calc{background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.18);border-radius:13px;padding:16px;margin-bottom:16px}
+.savings-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+
+/* ── FIX 1: SAVINGS RESULT — now clearly visible with proper styling ── */
+.savings-results-container{margin-top:14px;display:flex;flex-direction:column;gap:8px;animation:fadeUp .3s ease}
+.savings-result-item{display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:12px 14px}
+.savings-result-item.positive{border-color:rgba(34,197,94,0.25);background:rgba(34,197,94,0.06)}
+.savings-result-item.negative{border-color:rgba(239,68,68,0.25);background:rgba(239,68,68,0.06)}
+.savings-result-item.neutral{border-color:rgba(59,130,246,0.25);background:rgba(59,130,246,0.06)}
+.savings-result-label{font-size:12px;color:#94a3b8;font-weight:500}
+.savings-result-val{font-size:16px;font-weight:800;font-family:'DM Mono',monospace}
+.savings-result-val.green{color:#4ade80}
+.savings-result-val.red{color:#f87171}
+.savings-result-val.blue{color:#60a5fa}
+.savings-result-val.yellow{color:#facc15}
+.savings-divider{height:1px;background:rgba(255,255,255,0.05);margin:4px 0}
+.savings-summary-banner{background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);border-radius:10px;padding:12px 14px;margin-top:4px;font-size:12px;color:#93c5fd;line-height:1.6}
+.savings-summary-banner strong{color:#60a5fa}
+
+.timeline-item{display:flex;gap:13px;margin-bottom:14px;position:relative}
+.timeline-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:5px}
+.timeline-line{position:absolute;left:4px;top:15px;width:2px;bottom:-14px;background:rgba(255,255,255,0.06)}
+.timeline-item:last-child .timeline-line{display:none}
+.timeline-content{flex:1}
+.timeline-month{font-size:11px;color:#64748b;margin-bottom:2px}
+.timeline-action{font-size:13px;font-weight:600;color:#e2e8f0}
+.timeline-detail{font-size:12px;color:#64748b;margin-top:2px}
+
+/* ── FIX 2b: CHATBOT — user-friendly redesign ── */
+.chat-container{background:rgba(10,12,25,0.7);border:1px solid rgba(255,255,255,0.08);border-radius:16px;overflow:hidden;margin-bottom:12px}
+.chat-header-bar{background:linear-gradient(135deg,rgba(37,99,235,0.25),rgba(124,58,237,0.25));padding:12px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(255,255,255,0.07)}
+.chat-header-avatar{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,#7c3aed,#2563eb);display:flex;align-items:center;justify-content:center;font-size:16px}
+.chat-header-info{flex:1}
+.chat-header-name{font-size:13px;font-weight:700;color:#f1f5f9}
+.chat-header-status{font-size:10px;color:#4ade80;display:flex;align-items:center;gap:4px;margin-top:1px}
+.chat-status-dot{width:5px;height:5px;border-radius:50%;background:#22c55e;animation:pulse 1.5s infinite}
+.chat-window{height:340px;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:12px;scroll-behavior:smooth}
+.chat-msg{display:flex;gap:9px;align-items:flex-end;animation:fadeUp .22s ease;max-width:100%}
+.chat-msg.user{flex-direction:row-reverse}
+.chat-avatar{width:28px;height:28px;border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px}
+.chat-avatar.ai{background:linear-gradient(135deg,#7c3aed,#2563eb)}
+.chat-avatar.user{background:linear-gradient(135deg,#0f766e,#0369a1)}
+.chat-msg-wrap{display:flex;flex-direction:column;max-width:78%}
+.chat-msg.user .chat-msg-wrap{align-items:flex-end}
+.chat-bubble{padding:10px 13px;border-radius:14px;font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-word}
+.chat-msg.ai .chat-bubble{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);color:#e2e8f0;border-bottom-left-radius:4px}
+.chat-msg.user .chat-bubble{background:linear-gradient(135deg,rgba(37,99,235,0.45),rgba(79,70,229,0.45));border:1px solid rgba(59,130,246,0.3);color:#f1f5f9;border-bottom-right-radius:4px}
+.chat-time{font-size:10px;color:#334155;margin-top:3px;padding:0 2px}
+.chat-msg.user .chat-time{text-align:right}
+.chat-typing-wrap{display:flex;gap:9px;align-items:flex-end}
+.chat-typing-bubble{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:14px;border-bottom-left-radius:4px;padding:12px 16px;display:flex;gap:4px;align-items:center}
+.typing-dot{width:6px;height:6px;border-radius:50%;background:#64748b;animation:bounce .9s infinite}
+.typing-dot:nth-child(2){animation-delay:.15s}
+.typing-dot:nth-child(3){animation-delay:.3s}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+.chat-footer{border-top:1px solid rgba(255,255,255,0.06);padding:10px 14px}
+.quick-qs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.quick-q{background:rgba(59,130,246,0.09);border:1px solid rgba(59,130,246,0.2);border-radius:20px;padding:5px 12px;font-size:11px;color:#93c5fd;cursor:pointer;transition:all .16s;font-family:'DM Sans',sans-serif;font-weight:600;width:auto;margin:0}
+.quick-q:hover{background:rgba(59,130,246,0.2);transform:translateY(-1px)}
+.chat-input-row{display:flex;gap:8px;align-items:flex-end}
+.chat-input-row textarea{flex:1;margin:0;min-height:42px;max-height:100px;border-radius:12px;background:rgba(255,255,255,0.06);resize:none}
+.chat-send-btn{width:42px;height:42px;padding:0;border-radius:12px;background:linear-gradient(135deg,#2563eb,#4f46e5);color:#fff;font-size:18px;flex-shrink:0;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(37,99,235,0.3)}
+.chat-send-btn:hover{transform:scale(1.06);box-shadow:0 6px 16px rgba(37,99,235,0.4)}
+
+/* ── HISTORY ── */
+.history-item{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.055);border-radius:11px;margin-bottom:9px;transition:all .18s}
+.history-item:hover{background:rgba(255,255,255,0.05)}
+.history-left{display:flex;align-items:center;gap:11px}
+.history-icon{width:38px;height:38px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:17px}
+.history-meta{font-size:12px;color:#64748b;margin-top:2px}
+.history-name{font-size:13px;font-weight:600;color:#e2e8f0}
+.history-score{font-family:'DM Mono',monospace;font-size:19px;font-weight:700}
+.history-empty{text-align:center;padding:36px 18px;color:#475569}
+.history-empty-icon{font-size:36px;margin-bottom:11px}
+
+/* ── EMI CALCULATOR ── */
+.emi-hero-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:22px}
+.emi-hero-card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:16px;text-align:center}
+.emi-hero-val{font-size:22px;font-weight:800;font-family:'DM Mono',monospace;margin-bottom:4px}
+.emi-hero-lbl{font-size:11px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.emi-slider-group{margin-bottom:18px}
+.emi-slider-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.emi-slider-label{font-size:12px;font-weight:600;color:#94a3b8}
+.emi-slider-val{font-size:13px;font-weight:700;color:#60a5fa;font-family:'DM Mono',monospace;background:rgba(59,130,246,0.1);border-radius:6px;padding:2px 9px}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:5px;border-radius:99px;background:rgba(255,255,255,0.08);outline:none;padding:0;margin:0;border:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:linear-gradient(135deg,#2563eb,#7c3aed);border:2px solid rgba(255,255,255,0.2);cursor:pointer;box-shadow:0 2px 8px rgba(37,99,235,0.4)}
+input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:linear-gradient(135deg,#2563eb,#7c3aed);border:2px solid rgba(255,255,255,0.2);cursor:pointer}
+.emi-breakdown{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px}
+.emi-breakdown-item{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:11px;padding:14px 16px}
+.emi-breakdown-label{font-size:11px;color:#64748b;margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.emi-breakdown-val{font-size:18px;font-weight:700;font-family:'DM Mono',monospace}
+
+/* Outstanding balance section */
+.outstanding-header{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
+.outstanding-card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:14px;text-align:center}
+.outstanding-card-val{font-size:16px;font-weight:700;font-family:'DM Mono',monospace;margin-bottom:3px}
+.outstanding-card-lbl{font-size:10px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.amortization-wrap{overflow-x:auto;max-height:340px;overflow-y:auto;border-radius:11px;border:1px solid rgba(255,255,255,0.06)}
+.amortization-table{width:100%;border-collapse:collapse;font-size:11px;font-family:'DM Mono',monospace}
+.amortization-table th{background:rgba(59,130,246,.13);color:#60a5fa;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:8px 10px;text-align:right;position:sticky;top:0;z-index:2}
+.amortization-table th:first-child{text-align:left}
+.amortization-table td{padding:7px 10px;color:#cbd5e1;border-bottom:1px solid rgba(255,255,255,0.03);text-align:right}
+.amortization-table td:first-child{text-align:left;color:#64748b}
+.amortization-table tr:nth-child(even) td{background:rgba(255,255,255,.018)}
+.amortization-table tr.current-month td{background:rgba(59,130,246,0.09)!important;color:#93c5fd}
+.amortization-table tr.current-month td:first-child{color:#60a5fa;font-weight:700}
+.balance-progress-wrap{margin-bottom:20px}
+.balance-progress-header{display:flex;justify-content:space-between;margin-bottom:6px;font-size:12px}
+.balance-progress-bar-outer{width:100%;height:12px;background:rgba(255,255,255,0.06);border-radius:99px;overflow:hidden}
+.balance-progress-bar-inner{height:100%;border-radius:99px;background:linear-gradient(90deg,#22c55e,#3b82f6);transition:width 1s ease}
+.month-highlight{background:rgba(34,197,94,0.09);border:1px solid rgba(34,197,94,0.25);border-radius:11px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:12px}
+.month-highlight-icon{font-size:24px;flex-shrink:0}
+.month-highlight-title{font-size:13px;font-weight:700;color:#4ade80;margin-bottom:2px}
+.month-highlight-detail{font-size:12px;color:#64748b}
+
+/* ── FLOATING CHATBOT ── */
+#floatChatBtn{
+  position:fixed;bottom:24px;right:24px;width:58px;height:58px;border-radius:50%;
+  background:linear-gradient(135deg,#2563eb,#7c3aed);
+  box-shadow:0 8px 28px rgba(37,99,235,0.45);
+  color:#fff;font-size:26px;cursor:pointer;z-index:9000;
+  display:flex;align-items:center;justify-content:center;
+  border:none;transition:transform .2s,box-shadow .2s;
+  animation:floatPulse 3s ease-in-out infinite;
+}
+#floatChatBtn:hover{transform:scale(1.1);box-shadow:0 12px 36px rgba(37,99,235,0.6)}
+@keyframes floatPulse{
+  0%,100%{box-shadow:0 8px 28px rgba(37,99,235,0.45)}
+  50%{box-shadow:0 8px 28px rgba(124,58,237,0.55),0 0 0 8px rgba(37,99,235,0.08)}
+}
+.float-badge{position:absolute;top:-2px;right:-2px;width:16px;height:16px;background:#ef4444;border-radius:50%;border:2px solid var(--bg);font-size:9px;font-weight:700;color:#fff;display:none;align-items:center;justify-content:center}
+
+#floatChatPanel{
+  position:fixed;bottom:92px;right:24px;width:370px;max-height:540px;
+  background:#0d1426;border:1px solid rgba(255,255,255,0.1);border-radius:20px;
+  box-shadow:0 24px 64px rgba(0,0,0,0.7);z-index:9000;
+  display:none;flex-direction:column;overflow:hidden;
+  animation:slideUp .28s cubic-bezier(.22,1,.36,1);
+}
+#floatChatPanel.open{display:flex}
+@keyframes slideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.float-chat-header{
+  background:linear-gradient(135deg,rgba(37,99,235,0.3),rgba(124,58,237,0.3));
+  padding:14px 16px;display:flex;align-items:center;gap:10px;
+  border-bottom:1px solid rgba(255,255,255,0.07);flex-shrink:0
+}
+.float-chat-avatar{width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,#7c3aed,#2563eb);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.float-chat-title{font-size:14px;font-weight:700;color:#f1f5f9}
+.float-chat-status{font-size:11px;color:#4ade80;display:flex;align-items:center;gap:4px}
+.float-status-dot{width:6px;height:6px;border-radius:50%;background:#22c55e;animation:pulse 1.5s infinite}
+.float-chat-close{margin-left:auto;background:none;border:none;color:#64748b;font-size:18px;cursor:pointer;padding:4px;border-radius:7px;line-height:1;width:auto}
+.float-chat-close:hover{background:rgba(255,255,255,0.07);color:#e2e8f0}
+.float-chat-messages{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:12px;scroll-behavior:smooth}
+.float-msg{display:flex;gap:8px;align-items:flex-end;animation:fadeUp .22s ease}
+.float-msg.user{flex-direction:row-reverse}
+.float-msg-avatar{width:28px;height:28px;border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px}
+.float-msg-avatar.ai{background:linear-gradient(135deg,#7c3aed,#2563eb)}
+.float-msg-avatar.user{background:linear-gradient(135deg,#0f766e,#0369a1)}
+.float-msg-wrap{display:flex;flex-direction:column;max-width:80%}
+.float-msg.user .float-msg-wrap{align-items:flex-end}
+.float-bubble{padding:10px 13px;border-radius:14px;font-size:12.5px;line-height:1.6;white-space:pre-wrap;word-break:break-word}
+.float-msg.ai .float-bubble{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);color:#e2e8f0;border-bottom-left-radius:4px}
+.float-msg.user .float-bubble{background:linear-gradient(135deg,rgba(37,99,235,0.45),rgba(79,70,229,0.45));border:1px solid rgba(59,130,246,0.3);color:#f1f5f9;border-bottom-right-radius:4px}
+.float-time{font-size:10px;color:#334155;margin-top:3px;padding:0 2px}
+.float-msg.user .float-time{text-align:right}
+.float-typing-row{display:flex;gap:8px;align-items:flex-end}
+.float-typing-bubble{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:14px;border-bottom-left-radius:4px;padding:10px 14px;display:flex;gap:4px;align-items:center}
+.float-typing-dot{width:5px;height:5px;border-radius:50%;background:#64748b;animation:bounce .9s infinite}
+.float-typing-dot:nth-child(2){animation-delay:.15s}
+.float-typing-dot:nth-child(3){animation-delay:.3s}
+.float-quick-qs{display:flex;flex-wrap:wrap;gap:5px;padding:8px 14px;border-top:1px solid rgba(255,255,255,0.05);flex-shrink:0}
+.float-quick-q{background:rgba(59,130,246,0.09);border:1px solid rgba(59,130,246,0.2);border-radius:20px;padding:5px 10px;font-size:11px;color:#93c5fd;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600;width:auto;margin:0;white-space:nowrap;transition:all .15s}
+.float-quick-q:hover{background:rgba(59,130,246,0.2);transform:translateY(-1px)}
+.float-chat-input-row{display:flex;gap:7px;align-items:flex-end;padding:10px 14px;border-top:1px solid rgba(255,255,255,0.07);flex-shrink:0}
+.float-chat-input-row textarea{flex:1;margin:0;min-height:40px;max-height:80px;font-size:12.5px;padding:9px 11px;border-radius:12px;background:rgba(255,255,255,0.06)}
+.float-send-btn{width:40px;height:40px;padding:0;border-radius:12px;background:linear-gradient(135deg,#2563eb,#4f46e5);color:#fff;font-size:17px;flex-shrink:0;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(37,99,235,0.3)}
+.float-send-btn:hover{transform:scale(1.06)}
+
+/* ── AUTH ── */
+#authInitOverlay{position:fixed;inset:0;background:#0a0f1e;display:flex;align-items:center;justify-content:center;z-index:99999;transition:opacity .3s}
+#authInitOverlay .init-spinner{width:34px;height:34px;border:3px solid rgba(59,130,246,.18);border-top-color:#3b82f6;border-radius:50%;animation:spin .8s linear infinite}
+#toast-container{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;flex-direction:column;gap:7px;align-items:center}
+.toast{display:flex;align-items:center;gap:9px;padding:11px 16px;border-radius:11px;font-size:13px;font-weight:500;backdrop-filter:blur(12px);animation:toastIn .28s ease;min-width:220px;max-width:320px;box-shadow:0 7px 22px rgba(0,0,0,.28)}
+.toast-success{background:rgba(34,197,94,.13);border:1px solid rgba(34,197,94,.28);color:#4ade80}
+.toast-error{background:rgba(239,68,68,.13);border:1px solid rgba(239,68,68,.28);color:#f87171}
+.toast-info{background:rgba(59,130,246,.13);border:1px solid rgba(59,130,246,.28);color:#60a5fa}
+@keyframes toastIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes toastOut{from{opacity:1}to{opacity:0}}
+.spinner-overlay{display:none;position:fixed;inset:0;background:rgba(10,15,30,.72);backdrop-filter:blur(4px);z-index:9998;align-items:center;justify-content:center}
+.spinner-overlay.active{display:flex}
+.spinner-box{background:rgba(22,32,54,.97);border:1px solid rgba(255,255,255,0.09);border-radius:15px;padding:28px 38px;text-align:center}
+.spinner{width:40px;height:40px;border:3px solid rgba(59,130,246,.18);border-top-color:#3b82f6;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.link-btn{background:none;border:none;color:#3b82f6;font-size:12px;cursor:pointer;padding:0;width:auto;margin-top:10px;display:block;text-align:center;font-family:'DM Sans',sans-serif}
+.link-btn:hover{text-decoration:underline}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:#0a0f1e}::-webkit-scrollbar-thumb{background:#334155;border-radius:3px}
+
+@media(max-width:600px){
+  .user-type-grid,.emi-hero-cards{grid-template-columns:1fr}
+  .outstanding-header{grid-template-columns:1fr 1fr}
+  .form-grid,.emi-breakdown,.savings-row{grid-template-columns:1fr}
+  .result-header{flex-direction:column;text-align:center}
+  .charts-grid{grid-template-columns:1fr}
+  .bank-grid{grid-template-columns:repeat(2,1fr)}
+  .outer-tab{font-size:11px;padding:8px 4px}
+  .lang-grid{grid-template-columns:repeat(2,1fr)}
+  #floatChatPanel{width:calc(100vw - 20px);right:10px;bottom:80px}
+  .instant-results{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<div id="authInitOverlay"><div class="init-spinner"></div></div>
+<div id="toast-container"></div>
+<div class="spinner-overlay" id="spinnerOverlay">
+  <div class="spinner-box"><div class="spinner"></div><div class="spinner-text" id="spinnerText">Analyzing...</div></div>
+</div>
+
+<!-- ═══ FLOATING AI SUPPORT CHATBOT ═══ -->
+<button id="floatChatBtn" onclick="toggleFloatChat()" title="24/7 AI Support">
+  <span id="floatChatIcon">💬</span>
+  <span class="float-badge" id="floatBadge">1</span>
+</button>
+
+<div id="floatChatPanel">
+  <div class="float-chat-header">
+    <div class="float-chat-avatar">🤖</div>
+    <div>
+      <div class="float-chat-title">FinWell Support</div>
+      <div class="float-chat-status"><span class="float-status-dot"></span> Online · Always available</div>
+    </div>
+    <button class="float-chat-close" onclick="toggleFloatChat()">✕</button>
+  </div>
+  <div class="float-chat-messages" id="floatMessages"></div>
+  <div class="float-quick-qs" id="floatQuickQs"></div>
+  <div class="float-chat-input-row">
+    <textarea id="floatInput" placeholder="Ask anything about loans, EMI, banks..." onkeydown="floatChatKey(event)"></textarea>
+    <button class="float-send-btn" onclick="sendFloatChat()">↑</button>
+  </div>
+</div>
+
+<div class="container">
+  <div class="app-header">
+    <div class="app-logo">
+      <div class="app-logo-icon">💎</div>
+      <div class="app-logo-text">FinWell AI</div>
+    </div>
+    <div class="app-tagline">AI-powered financial wellness · EMI Calculator · Outstanding Balance · 24/7 Support</div>
+  </div>
+
+  <!-- REGISTER -->
+  <div id="registerTab" class="tab-content">
+    <div class="card">
+      <div class="section-title">Create Account</div>
+      <div class="section-sub">Join FinWell AI and start your financial health journey</div>
+      <div class="form-group" style="margin-bottom:10px"><label class="field-label">Email Address</label><input type="email" id="registerEmail" placeholder="you@example.com"></div>
+      <div class="form-group"><label class="field-label">Password</label><input type="password" id="registerPassword" placeholder="Minimum 6 characters"></div>
+      <button class="btn-primary" onclick="register()">Create Account →</button>
+      <button class="btn-secondary" onclick="showTab('loginTab')">Already have an account? Login</button>
+    </div>
+  </div>
+
+  <!-- LOGIN -->
+  <div id="loginTab" class="tab-content">
+    <div class="card">
+      <div class="section-title">Welcome Back</div>
+      <div class="section-sub">Sign in to continue your financial analysis</div>
+      <div class="form-group" style="margin-bottom:10px"><label class="field-label">Email Address</label><input type="email" id="loginEmail" placeholder="you@example.com"></div>
+      <div class="form-group"><label class="field-label">Password</label><input type="password" id="loginPassword" placeholder="Your password"></div>
+      <button class="btn-primary" onclick="login()">Sign In →</button>
+      <button class="btn-secondary" onclick="showTab('registerTab')">Create a new account</button>
+      <button class="link-btn" onclick="showTab('forgotPasswordTab')">Forgot your password?</button>
+    </div>
+  </div>
+
+  <!-- FORGOT PASSWORD -->
+  <div id="forgotPasswordTab" class="tab-content">
+    <div class="card">
+      <div class="section-title">Reset Password</div>
+      <div class="section-sub">Enter your registered email to receive a reset link</div>
+      <div class="form-group"><label class="field-label">Email Address</label><input type="email" id="resetEmail" placeholder="you@example.com"></div>
+      <button class="btn-primary" onclick="resetPassword()">Send Reset Email</button>
+      <button class="btn-secondary" onclick="showTab('loginTab')">← Back to Login</button>
+    </div>
+  </div>
+
+  <!-- FIX 3: LANGUAGE — No flags, clean pill design -->
+  <div id="langTab" class="tab-content">
+    <div class="card">
+      <div class="lang-hero">
+        <div class="lang-hero-icon">🌐</div>
+        <h2 id="langWelcomeMsg">Welcome!</h2>
+        <p>Choose your preferred language for the best experience</p>
+      </div>
+      <div class="lang-grid" id="langGrid"></div>
+      <button class="btn-primary" onclick="confirmLanguage()" id="langConfirmBtn" disabled style="opacity:.4">Continue →</button>
+      <p style="text-align:center;font-size:11px;color:#475569;margin-top:10px">You can change this anytime from Settings</p>
+    </div>
+  </div>
+
+  <!-- WELCOME -->
+  <div id="welcomeTab" class="tab-content">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+        <div id="userPill" class="user-pill" style="display:none">
+          <div class="user-avatar" id="userAvatarInitial">U</div>
+          <span id="userPillEmail"></span>
+        </div>
+        <button class="btn-sm" style="background:rgba(124,58,237,0.1);border:1px solid rgba(124,58,237,0.25);color:#a78bfa;width:auto;margin:0" onclick="showTab('langTab')">🌐 <span id="activeLangLabel">English</span></button>
+      </div>
+      <div class="welcome-hero">
+        <div class="welcome-avatar">👋</div>
+        <h2 id="welcomeMsg">Welcome!</h2>
+        <p id="welcomeSub">Let's personalize your financial analysis. Tell us who you are to get started.</p>
+      </div>
+      <div class="name-input-wrap">
+        <label class="field-label" id="label_name">Your Full Name</label>
+        <input type="text" id="userName" placeholder="e.g. Rahul Sharma">
+      </div>
+      <div class="user-type-grid">
+        <div class="user-card" onclick="selectType('student',this)">
+          <div class="user-card-icon">🎓</div>
+          <div class="user-card-title" id="type_student">Student</div>
+          <div class="user-card-desc" id="type_student_desc">Education loan, planning career ahead</div>
+        </div>
+        <div class="user-card" onclick="selectType('employee',this)">
+          <div class="user-card-icon">💼</div>
+          <div class="user-card-title" id="type_employee">Employee</div>
+          <div class="user-card-desc" id="type_employee_desc">Salary earner, managing personal loans</div>
+        </div>
+        <div class="user-card" onclick="selectType('scholar',this)">
+          <div class="user-card-icon">🏅</div>
+          <div class="user-card-title" id="type_scholar">Scholar</div>
+          <div class="user-card-desc" id="type_scholar_desc">Scholarship/stipend, managing study costs</div>
+        </div>
+      </div>
+      <button class="btn-danger" onclick="logout()" style="margin-top:8px;width:auto;float:right">Sign Out</button>
+      <div style="clear:both"></div>
+    </div>
+  </div>
+
+  <!-- STUDENT TAB -->
+  <div id="studentTab" class="tab-content">
+    <div class="card">
+      <div class="outer-nav" id="student-outernav">
+        <button class="outer-tab active" onclick="switchOuter('student','banks',this)">🏦 Banks</button>
+        <button class="outer-tab" onclick="switchOuter('student','analysis',this)">📊 Analysis</button>
+        <button class="outer-tab" onclick="switchOuter('student','emi',this)">🧮 EMI Calc</button>
+        <button class="outer-tab" onclick="switchOuter('student','outstanding',this)">💳 Balance</button>
+        <button class="outer-tab" onclick="switchOuter('student','preloan',this)">📋 Pre-Loan</button>
+        <button class="outer-tab" onclick="switchOuter('student','chatbot',this)">🤖 AI Chat</button>
+        <button class="outer-tab" onclick="switchOuter('student','history',this)">🕓 History</button>
+        <button class="outer-tab btn-danger" style="flex:0;padding:9px 12px" onclick="logout()">↩</button>
+      </div>
+      <div id="student-banks" class="step-content active">
+        <div class="badge badge-blue">🎓 Student</div>
+        <div class="section-title">Step 1 — Select Your Banks</div>
+        <div class="section-sub">Choose one or more banks to compare education loan rates.</div>
+        <div class="bank-section">
+          <div class="bank-section-title">🏦 Available Banks & Education Loan Rates</div>
+          <div class="bank-grid" id="s_bankGrid"></div>
+          <div class="bank-quick-btns">
+            <button class="bank-quick-btn" onclick="selectAllBanks('s','student')">✓ Select All</button>
+            <button class="bank-quick-btn red" onclick="clearBanks('s','student')">✕ Clear</button>
+            <button class="bank-quick-btn" style="color:#a78bfa" onclick="selectPSU('s','student')">🏛 PSU Only</button>
+            <button class="bank-quick-btn" style="color:#f59e0b" onclick="selectPrivate('s','student')">🔷 Private Only</button>
+          </div>
+          <div id="s_bankInfo" class="selected-rate-bar" style="display:none"></div>
+        </div>
+        <div class="proceed-banner">
+          <div class="proceed-info">✅ Select banks above, then proceed to Analysis</div>
+          <button class="btn-primary btn-sm" onclick="switchOuter('student','analysis',document.querySelector('#student-outernav .outer-tab:nth-child(2)'))">Next: Analysis →</button>
+        </div>
+      </div>
+      <div id="student-analysis" class="step-content">
+        <div class="badge badge-blue">🎓 Student</div>
+        <div class="section-title">Step 2 — Loan Analysis</div>
+        <div class="section-sub">Fill in your loan details. AI will analyze risk using your selected bank rates.</div>
+        <div id="s_selected_banks_summary" class="selected-rate-bar" style="margin-bottom:14px;display:none"></div>
+        <div class="form-grid">
+          <div class="form-group"><label class="field-label">Loan Amount (₹)</label><input type="number" id="s_loanAmount" placeholder="e.g. 500000"></div>
+          <div class="form-group"><label class="field-label">Loan Duration (Years)</label><input type="number" id="s_loanYears" placeholder="e.g. 7"></div>
+          <div class="form-group"><label class="field-label">Expected Monthly Salary (₹)</label><input type="number" id="s_expectedSalary" placeholder="e.g. 35000"></div>
+          <div class="form-group"><label class="field-label">Monthly Expenses (₹)</label><input type="number" id="s_expenses" placeholder="e.g. 8000"></div>
+          <div class="form-group"><label class="field-label">Course Duration (Years)</label><input type="number" id="s_courseDuration" placeholder="e.g. 4"></div>
+          <div class="form-group"><label class="field-label">Custom Rate (%) <span style="color:#475569;font-weight:400;text-transform:none;font-size:10px">optional</span></label><input type="number" id="s_interestRate" placeholder="Blank = use bank rates"></div>
+        </div>
+        <div class="btn-row">
+          <button class="btn-primary" style="margin-top:0" onclick="analyzeStudent()">✨ Analyze with AI</button>
+          <button class="btn-secondary" style="margin-top:0" onclick="downloadPDF()">⬇ PDF</button>
+          <button class="btn-secondary" style="margin-top:0" onclick="switchOuter('student','banks',document.querySelector('#student-outernav .outer-tab:nth-child(1)'))">← Banks</button>
+          <button class="btn-secondary" style="margin-top:0" onclick="showTab('welcomeTab')">🏠</button>
+        </div>
+        <div id="s_result"></div>
+      </div>
+      <div id="student-emi" class="step-content">
+        <div class="badge badge-purple">🧮 EMI Calculator</div>
+        <div class="section-title">EMI Calculator</div>
+        <div class="section-sub">Instantly calculate your monthly installment, total interest, and full repayment amount.</div>
+        <div id="emiCalcHTML_s"></div>
+      </div>
+      <div id="student-outstanding" class="step-content">
+        <div class="badge badge-green">💳 Outstanding Balance</div>
+        <div class="section-title">Outstanding Balance Tracker</div>
+        <div class="section-sub">Enter your loan details and current month to see exactly how much is left to repay.</div>
+        <div id="outstandingHTML_s"></div>
+      </div>
+      <div id="student-preloan" class="step-content">
+        <div class="badge badge-blue">🎓 Student</div>
+        <div class="section-title">Pre-Loan Readiness Plan</div>
+        <div class="section-sub">Complete this checklist before applying for your education loan.</div>
+        <div class="plan-progress">
+          <div class="plan-progress-title">Readiness Progress</div>
+          <div class="plan-progress-bar-wrap"><div class="plan-progress-bar" id="s_planBar" style="width:0%"></div></div>
+          <div class="plan-progress-label" id="s_planLabel">0 / 8 completed</div>
+        </div>
+        <div class="plan-section"><div class="plan-section-title">📋 Pre-Application Checklist</div><div id="s_checklist"></div></div>
+        <div class="plan-section">
+          <div class="plan-section-title">💰 Savings & Down-Payment Calculator</div>
+          <div class="savings-calc">
+            <div class="savings-row">
+              <div class="form-group"><label class="field-label">Total Loan Needed (₹)</label><input type="number" id="s_pl_loan" placeholder="e.g. 500000" oninput="calcPreLoan('s')"></div>
+              <div class="form-group"><label class="field-label">Months Until Admission</label><input type="number" id="s_pl_months" placeholder="e.g. 6" oninput="calcPreLoan('s')"></div>
+            </div>
+            <div class="savings-row">
+              <div class="form-group"><label class="field-label">Monthly Savings (₹)</label><input type="number" id="s_pl_saving" placeholder="e.g. 3000" oninput="calcPreLoan('s')"></div>
+              <div class="form-group"><label class="field-label">Down Payment % Needed</label><input type="number" id="s_pl_dpct" placeholder="e.g. 15" oninput="calcPreLoan('s')"></div>
+            </div>
+            <div id="s_pl_result"></div>
+          </div>
+        </div>
+        <div class="plan-section"><div class="plan-section-title">📅 Recommended Timeline</div><div id="s_timeline"></div></div>
+      </div>
+      <div id="student-chatbot" class="step-content">
+        <div class="badge badge-blue">🎓 Student</div>
+        <div class="section-title">AI Financial Advisor</div>
+        <div class="section-sub">Ask anything about education loans, EMI, bank selection, or financial planning.</div>
+        <div class="chat-container">
+          <div class="chat-header-bar">
+            <div class="chat-header-avatar">🤖</div>
+            <div class="chat-header-info">
+              <div class="chat-header-name">FinWell Student Advisor</div>
+              <div class="chat-header-status"><span class="chat-status-dot"></span> Active now</div>
+            </div>
+          </div>
+          <div class="chat-window" id="s_chatWindow"></div>
+          <div class="chat-footer">
+            <div class="quick-qs" id="s_quickqs"></div>
+            <div class="chat-input-row">
+              <textarea id="s_chatInput" placeholder="Ask about education loans, CIBIL, EMI..." onkeydown="chatKey(event,'student')"></textarea>
+              <button class="chat-send-btn" onclick="sendChat('student')">↑</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="student-history" class="step-content">
+        <div class="section-title">Analysis History</div>
+        <div class="section-sub">Your past analyses saved to the cloud.</div>
+        <div id="student-history-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EMPLOYEE TAB -->
+  <div id="employeeTab" class="tab-content">
+    <div class="card">
+      <div class="outer-nav" id="employee-outernav">
+        <button class="outer-tab active" onclick="switchOuter('employee','banks',this)">🏦 Banks</button>
+        <button class="outer-tab" onclick="switchOuter('employee','analysis',this)">📊 Analysis</button>
+        <button class="outer-tab" onclick="switchOuter('employee','emi',this)">🧮 EMI Calc</button>
+        <button class="outer-tab" onclick="switchOuter('employee','outstanding',this)">💳 Balance</button>
+        <button class="outer-tab" onclick="switchOuter('employee','preloan',this)">📋 Pre-Loan</button>
+        <button class="outer-tab" onclick="switchOuter('employee','chatbot',this)">🤖 AI Chat</button>
+        <button class="outer-tab" onclick="switchOuter('employee','history',this)">🕓 History</button>
+        <button class="outer-tab btn-danger" style="flex:0;padding:9px 12px" onclick="logout()">↩</button>
+      </div>
+      <div id="employee-banks" class="step-content active">
+        <div class="badge badge-green">💼 Employee</div>
+        <div class="section-title">Step 1 — Select Your Banks</div>
+        <div class="section-sub">Choose banks to compare personal/home loan rates.</div>
+        <div class="bank-section">
+          <div class="bank-section-title">🏦 Available Banks & Personal Loan Rates</div>
+          <div class="bank-grid" id="e_bankGrid"></div>
+          <div class="bank-quick-btns">
+            <button class="bank-quick-btn" onclick="selectAllBanks('e','employee')">✓ Select All</button>
+            <button class="bank-quick-btn red" onclick="clearBanks('e','employee')">✕ Clear</button>
+            <button class="bank-quick-btn" style="color:#a78bfa" onclick="selectPSU('e','employee')">🏛 PSU Only</button>
+            <button class="bank-quick-btn" style="color:#f59e0b" onclick="selectPrivate('e','employee')">🔷 Private Only</button>
+          </div>
+          <div id="e_bankInfo" class="selected-rate-bar" style="display:none"></div>
+        </div>
+        <div class="proceed-banner">
+          <div class="proceed-info">✅ Select banks, then fill your details in Analysis</div>
+          <button class="btn-primary btn-sm" onclick="switchOuter('employee','analysis',document.querySelector('#employee-outernav .outer-tab:nth-child(2)'))">Next: Analysis →</button>
+        </div>
+      </div>
+      <div id="employee-analysis" class="step-content">
+        <div class="badge badge-green">💼 Employee</div>
+        <div class="section-title">Step 2 — Loan Analysis</div>
+        <div class="section-sub">Enter salary and loan details for a complete AI-powered risk report.</div>
+        <div id="e_selected_banks_summary" class="selected-rate-bar" style="margin-bottom:14px;display:none"></div>
+        <div class="form-grid">
+          <div class="form-group"><label class="field-label">Monthly Salary (₹)</label><input type="number" id="e_salary" placeholder="e.g. 60000"></div>
+          <div class="form-group"><label class="field-label">Loan Amount (₹)</label><input type="number" id="e_loanAmount" placeholder="e.g. 1000000"></div>
+          <div class="form-group"><label class="field-label">Loan Duration (Years)</label><input type="number" id="e_loanYears" placeholder="e.g. 10"></div>
+          <div class="form-group"><label class="field-label">Monthly Expenses (₹)</label><input type="number" id="e_expenses" placeholder="e.g. 20000"></div>
+          <div class="form-group"><label class="field-label">Other Existing EMIs (₹/mo)</label><input type="number" id="e_otherEMI" placeholder="e.g. 5000"></div>
+          <div class="form-group"><label class="field-label">Custom Rate (%) <span style="color:#475569;font-weight:400;text-transform:none;font-size:10px">optional</span></label><input type="number" id="e_interestRate" placeholder="Blank = use bank rates"></div>
+        </div>
+        <div class="btn-row">
+          <button class="btn-primary" style="margin-top:0" onclick="analyzeEmployee()">✨ Analyze with AI</button>
+          <button class="btn-secondary" style="margin-top:0" onclick="downloadPDF()">⬇ PDF</button>
+          <button class="btn-secondary" style="margin-top:0" onclick="switchOuter('employee','banks',document.querySelector('#employee-outernav .outer-tab:nth-child(1)'))">← Banks</button>
+          <button class="btn-secondary" style="margin-top:0" onclick="showTab('welcomeTab')">🏠</button>
+        </div>
+        <div id="e_result"></div>
+      </div>
+      <div id="employee-emi" class="step-content">
+        <div class="badge badge-purple">🧮 EMI Calculator</div>
+        <div class="section-title">EMI Calculator</div>
+        <div class="section-sub">Instantly calculate your monthly installment, total interest, and full repayment amount.</div>
+        <div id="emiCalcHTML_e"></div>
+      </div>
+      <div id="employee-outstanding" class="step-content">
+        <div class="badge badge-green">💳 Outstanding Balance</div>
+        <div class="section-title">Outstanding Balance Tracker</div>
+        <div class="section-sub">Enter your loan details and current month to see exactly how much is left to repay.</div>
+        <div id="outstandingHTML_e"></div>
+      </div>
+      <div id="employee-preloan" class="step-content">
+        <div class="badge badge-green">💼 Employee</div>
+        <div class="section-title">Pre-Loan Readiness Plan</div>
+        <div class="section-sub">Prepare yourself before applying for a loan.</div>
+        <div class="plan-progress">
+          <div class="plan-progress-title">Readiness Progress</div>
+          <div class="plan-progress-bar-wrap"><div class="plan-progress-bar" id="e_planBar" style="width:0%"></div></div>
+          <div class="plan-progress-label" id="e_planLabel">0 / 8 completed</div>
+        </div>
+        <div class="plan-section"><div class="plan-section-title">📋 Pre-Application Checklist</div><div id="e_checklist"></div></div>
+        <div class="plan-section">
+          <div class="plan-section-title">💰 Down Payment & EMI Planner</div>
+          <div class="savings-calc">
+            <div class="savings-row">
+              <div class="form-group"><label class="field-label">Monthly Salary (₹)</label><input type="number" id="e_pl_salary" placeholder="e.g. 60000" oninput="calcPreLoan('e')"></div>
+              <div class="form-group"><label class="field-label">Target Loan (₹)</label><input type="number" id="e_pl_loan" placeholder="e.g. 1000000" oninput="calcPreLoan('e')"></div>
+            </div>
+            <div class="savings-row">
+              <div class="form-group"><label class="field-label">Current Savings (₹)</label><input type="number" id="e_pl_saving" placeholder="e.g. 50000" oninput="calcPreLoan('e')"></div>
+              <div class="form-group"><label class="field-label">Target Down Payment (₹)</label><input type="number" id="e_pl_dp" placeholder="e.g. 200000" oninput="calcPreLoan('e')"></div>
+            </div>
+            <div id="e_pl_result"></div>
+          </div>
+        </div>
+        <div class="plan-section"><div class="plan-section-title">📅 Recommended Timeline</div><div id="e_timeline"></div></div>
+      </div>
+      <div id="employee-chatbot" class="step-content">
+        <div class="badge badge-green">💼 Employee</div>
+        <div class="section-title">AI Financial Advisor</div>
+        <div class="section-sub">Ask about home loans, personal loans, CIBIL, EMI planning, and investments.</div>
+        <div class="chat-container">
+          <div class="chat-header-bar">
+            <div class="chat-header-avatar">🤖</div>
+            <div class="chat-header-info">
+              <div class="chat-header-name">FinWell Employee Advisor</div>
+              <div class="chat-header-status"><span class="chat-status-dot"></span> Active now</div>
+            </div>
+          </div>
+          <div class="chat-window" id="e_chatWindow"></div>
+          <div class="chat-footer">
+            <div class="quick-qs" id="e_quickqs"></div>
+            <div class="chat-input-row">
+              <textarea id="e_chatInput" placeholder="Ask about home loans, EMI, prepayment..." onkeydown="chatKey(event,'employee')"></textarea>
+              <button class="chat-send-btn" onclick="sendChat('employee')">↑</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="employee-history" class="step-content">
+        <div class="section-title">Analysis History</div>
+        <div class="section-sub">Your past analyses saved to the cloud.</div>
+        <div id="employee-history-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCHOLAR TAB -->
+  <div id="scholarTab" class="tab-content">
+    <div class="card">
+      <div class="outer-nav" id="scholar-outernav">
+        <button class="outer-tab active" onclick="switchOuter('scholar','banks',this)">🏦 Banks</button>
+        <button class="outer-tab" onclick="switchOuter('scholar','analysis',this)">📊 Analysis</button>
+        <button class="outer-tab" onclick="switchOuter('scholar','emi',this)">🧮 EMI Calc</button>
+        <button class="outer-tab" onclick="switchOuter('scholar','outstanding',this)">💳 Balance</button>
+        <button class="outer-tab" onclick="switchOuter('scholar','preloan',this)">📋 Pre-Loan</button>
+        <button class="outer-tab" onclick="switchOuter('scholar','chatbot',this)">🤖 AI Chat</button>
+        <button class="outer-tab" onclick="switchOuter('scholar','history',this)">🕓 History</button>
+        <button class="outer-tab btn-danger" style="flex:0;padding:9px 12px" onclick="logout()">↩</button>
+      </div>
+      <div id="scholar-banks" class="step-content active">
+        <div class="badge badge-yellow">🏅 Scholar</div>
+        <div class="section-title">Step 1 — Select Your Banks</div>
+        <div class="section-sub">Scholars with loans can compare rates. If no loan, skip to Analysis.</div>
+        <div class="bank-section">
+          <div class="bank-section-title">🏦 Available Banks & Scholar Loan Rates</div>
+          <div class="bank-grid" id="sc_bankGrid"></div>
+          <div class="bank-quick-btns">
+            <button class="bank-quick-btn" onclick="selectAllBanks('sc','scholar')">✓ Select All</button>
+            <button class="bank-quick-btn red" onclick="clearBanks('sc','scholar')">✕ Clear</button>
+            <button class="bank-quick-btn" style="color:#a78bfa" onclick="selectPSU('sc','scholar')">🏛 PSU Only</button>
+            <button class="bank-quick-btn" style="color:#f59e0b" onclick="selectPrivate('sc','scholar')">🔷 Private Only</button>
+          </div>
+          <div id="sc_bankInfo" class="selected-rate-bar" style="display:none"></div>
+        </div>
+        <div class="proceed-banner">
+          <div class="proceed-info">✅ Select banks (optional), then fill scholarship details in Analysis</div>
+          <button class="btn-primary btn-sm" onclick="switchOuter('scholar','analysis',document.querySelector('#scholar-outernav .outer-tab:nth-child(2)'))">Next: Analysis →</button>
+        </div>
+      </div>
+      <div id="scholar-analysis" class="step-content">
+        <div class="badge badge-yellow">🏅 Scholar</div>
+        <div class="section-title">Step 2 — Financial Analysis</div>
+        <div class="section-sub">Enter scholarship and loan details for an AI-powered financial health report.</div>
+        <div id="sc_selected_banks_summary" class="selected-rate-bar" style="margin-bottom:14px;display:none"></div>
+        <div class="form-grid">
+          <div class="form-group"><label class="field-label">Monthly Stipend (₹)</label><input type="number" id="sc_stipend" placeholder="e.g. 15000"></div>
+          <div class="form-group"><label class="field-label">Monthly Expenses (₹)</label><input type="number" id="sc_expenses" placeholder="e.g. 8000"></div>
+          <div class="form-group"><label class="field-label">Loan Amount (₹) — 0 if none</label><input type="number" id="sc_loanAmount" placeholder="e.g. 0"></div>
+          <div class="form-group"><label class="field-label">Loan Duration (Years)</label><input type="number" id="sc_loanYears" placeholder="e.g. 0"></div>
+          <div class="form-group"><label class="field-label">Expected Monthly Income After (₹)</label><input type="number" id="sc_expectedIncome" placeholder="e.g. 40000"></div>
+          <div class="form-group"><label class="field-label">Custom Rate (%) <span style="color:#475569;font-weight:400;text-transform:none;font-size:10px">optional</span></label><input type="number" id="sc_interestRate" placeholder="Blank = use bank rates"></div>
+        </div>
+        <div class="btn-row">
+          <button class="btn-primary" style="margin-top:0" onclick="analyzeScholar()">✨ Analyze with AI</button>
+          <button class="btn-secondary" style="margin-top:0" onclick="downloadPDF()">⬇ PDF</button>
+          <button class="btn-secondary" style="margin-top:0" onclick="switchOuter('scholar','banks',document.querySelector('#scholar-outernav .outer-tab:nth-child(1)'))">← Banks</button>
+          <button class="btn-secondary" style="margin-top:0" onclick="showTab('welcomeTab')">🏠</button>
+        </div>
+        <div id="sc_result"></div>
+      </div>
+      <div id="scholar-emi" class="step-content">
+        <div class="badge badge-purple">🧮 EMI Calculator</div>
+        <div class="section-title">EMI Calculator</div>
+        <div class="section-sub">Calculate monthly installments with interactive sliders.</div>
+        <div id="emiCalcHTML_sc"></div>
+      </div>
+      <div id="scholar-outstanding" class="step-content">
+        <div class="badge badge-green">💳 Outstanding Balance</div>
+        <div class="section-title">Outstanding Balance Tracker</div>
+        <div class="section-sub">Track remaining principal and see your full amortization schedule.</div>
+        <div id="outstandingHTML_sc"></div>
+      </div>
+      <div id="scholar-preloan" class="step-content">
+        <div class="badge badge-yellow">🏅 Scholar</div>
+        <div class="section-title">Pre-Loan Readiness Plan</div>
+        <div class="section-sub">Scholar-specific checklist and stipend allocation planner.</div>
+        <div class="plan-progress">
+          <div class="plan-progress-title">Readiness Progress</div>
+          <div class="plan-progress-bar-wrap"><div class="plan-progress-bar" id="sc_planBar" style="width:0%"></div></div>
+          <div class="plan-progress-label" id="sc_planLabel">0 / 8 completed</div>
+        </div>
+        <div class="plan-section"><div class="plan-section-title">📋 Pre-Application Checklist</div><div id="sc_checklist"></div></div>
+        <div class="plan-section">
+          <div class="plan-section-title">💰 Stipend Allocation Planner</div>
+          <div class="savings-calc">
+            <div class="savings-row">
+              <div class="form-group"><label class="field-label">Monthly Stipend (₹)</label><input type="number" id="sc_pl_stipend" placeholder="e.g. 15000" oninput="calcPreLoan('sc')"></div>
+              <div class="form-group"><label class="field-label">Monthly Expenses (₹)</label><input type="number" id="sc_pl_expenses" placeholder="e.g. 8000" oninput="calcPreLoan('sc')"></div>
+            </div>
+            <div class="savings-row">
+              <div class="form-group"><label class="field-label">Months to Save</label><input type="number" id="sc_pl_months" placeholder="e.g. 12" oninput="calcPreLoan('sc')"></div>
+              <div class="form-group"><label class="field-label">Loan Amount (₹)</label><input type="number" id="sc_pl_loan" placeholder="e.g. 200000" oninput="calcPreLoan('sc')"></div>
+            </div>
+            <div id="sc_pl_result"></div>
+          </div>
+        </div>
+        <div class="plan-section"><div class="plan-section-title">📅 Recommended Timeline</div><div id="sc_timeline"></div></div>
+      </div>
+      <div id="scholar-chatbot" class="step-content">
+        <div class="badge badge-yellow">🏅 Scholar</div>
+        <div class="section-title">AI Financial Advisor</div>
+        <div class="section-sub">Ask about stipend management, scholarship loans, post-PhD planning, and more.</div>
+        <div class="chat-container">
+          <div class="chat-header-bar">
+            <div class="chat-header-avatar">🤖</div>
+            <div class="chat-header-info">
+              <div class="chat-header-name">FinWell Scholar Advisor</div>
+              <div class="chat-header-status"><span class="chat-status-dot"></span> Active now</div>
+            </div>
+          </div>
+          <div class="chat-window" id="sc_chatWindow"></div>
+          <div class="chat-footer">
+            <div class="quick-qs" id="sc_quickqs"></div>
+            <div class="chat-input-row">
+              <textarea id="sc_chatInput" placeholder="Ask about stipend management, SIP investments..." onkeydown="chatKey(event,'scholar')"></textarea>
+              <button class="chat-send-btn" onclick="sendChat('scholar')">↑</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="scholar-history" class="step-content">
+        <div class="section-title">Analysis History</div>
+        <div class="section-sub">Your past analyses saved to the cloud.</div>
+        <div id="scholar-history-list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+// FIREBASE
+// ══════════════════════════════════════════
+const firebaseConfig={apiKey:"AIzaSyDWZPLkBFT9FjhiqqvCXsNjteojbJ0AMjI",authDomain:"studentloanriskapp.firebaseapp.com",projectId:"studentloanriskapp",storageBucket:"studentloanriskapp.firebasestorage.app",messagingSenderId:"125577084826",appId:"1:125577084826:web:fe921c65838ce1305d8423"};
+firebase.initializeApp(firebaseConfig);
+const auth=firebase.auth(), db=firebase.firestore();
+
+let currentUserId="", currentResultId="";
+let pieChart=null, barChart=null;
+let activeLang="en";
+
+// ══════════════════════════════════════════
+// API HELPERS
+// ══════════════════════════════════════════
+const API_URL="https://api.anthropic.com/v1/messages";
+const API_MODEL="claude-sonnet-4-20250514";
+
+function apiHeaders(){
+  return{"Content-Type":"application/json","anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"};
+}
+async function callAI(userPrompt,systemPrompt){
+  try{
+    const res=await fetch(API_URL,{method:"POST",headers:apiHeaders(),body:JSON.stringify({
+      model:API_MODEL,max_tokens:1000,
+      system:systemPrompt||"You are a helpful Indian financial advisor. Respond concisely.",
+      messages:[{role:"user",content:userPrompt}]
+    })});
+    if(!res.ok) return localFallback(userPrompt);
+    const d=await res.json();
+    return d.content?.filter(b=>b.type==="text").map(b=>b.text).join("")||localFallback(userPrompt);
+  }catch(e){return localFallback(userPrompt);}
+}
+async function callAIChat(messages,systemPrompt){
+  try{
+    const res=await fetch(API_URL,{method:"POST",headers:apiHeaders(),body:JSON.stringify({model:API_MODEL,max_tokens:800,system:systemPrompt,messages})});
+    if(!res.ok) return localFallback(messages.at(-1)?.content||"");
+    const d=await res.json();
+    return d.content?.filter(b=>b.type==="text").map(b=>b.text).join("")||localFallback("");
+  }catch(e){return localFallback(messages.at(-1)?.content||"");}
+}
+function localFallback(q=""){
+  const s=q.toLowerCase();
+  if(s.includes("emi"))    return "EMI = P × r(1+r)^n / ((1+r)^n-1)\nE.g. ₹5L at 8.15% for 7 yrs → ₹7,800/mo";
+  if(s.includes("cibil"))  return "750–900: Excellent | 700–749: Good | <650: Poor\nImprove: pay on time, keep credit utilisation <30%";
+  if(s.includes("morat"))  return "Moratorium = no EMI during course + 6 months. Interest still accrues. Pay partial to save.";
+  if(s.includes("sbi")||s.includes("bank")) return "SBI: 8.15%, zero processing fee, best for most.\nHDFC Credila: 9.5%, faster, good for abroad.";
+  if(s.includes("prepay")) return "PSU banks: 0% prepayment penalty.\nPrivate: 2–5%. Extra ₹10k/year saves ~1-2 years.";
+  if(s.includes("dti"))    return "<30%: Safe ✅ | 30-40%: Manageable | >50%: Danger 🚨";
+  if(s.includes("sip"))    return "₹1000/mo SIP × 10 yrs at 12% → ₹23L! Start early in Nifty 50 index fund.";
+  return "Ask me about: EMI, CIBIL score, moratorium, bank comparison, prepayment, DTI ratio, or SIP investments!";
+}
+
+// ══════════════════════════════════════════
+// FIX 3: LANGUAGE — No flags, just names
+// ══════════════════════════════════════════
+const LANGUAGES=[
+  {code:"en",name:"English",native:"English"},
+  {code:"hi",name:"Hindi",native:"हिन्दी"},
+  {code:"kn",name:"Kannada",native:"ಕನ್ನಡ"},
+  {code:"ta",name:"Tamil",native:"தமிழ்"},
+  {code:"te",name:"Telugu",native:"తెలుగు"},
+  {code:"mr",name:"Marathi",native:"मराठी"},
+  {code:"bn",name:"Bengali",native:"বাংলা"},
+  {code:"gu",name:"Gujarati",native:"ગુજરાતી"},
+  {code:"ml",name:"Malayalam",native:"മലയാളം"},
+];
+
+function renderLangGrid(){
+  document.getElementById('langGrid').innerHTML=LANGUAGES.map(l=>`
+    <div class="lang-pill ${l.code===activeLang?'selected':''}" onclick="selectLang('${l.code}',this)">
+      <div class="lang-pill-check">✓</div>
+      <div class="lang-pill-name">${l.name}</div>
+      <div class="lang-pill-native">${l.native}</div>
+    </div>`).join('');
+}
+function selectLang(code,card){
+  document.querySelectorAll('.lang-pill').forEach(c=>c.classList.remove('selected'));
+  card.classList.add('selected'); activeLang=code;
+  const btn=document.getElementById('langConfirmBtn');btn.disabled=false;btn.style.opacity='1';
+  const activeLbl=document.getElementById('activeLangLabel');
+  if(activeLbl) activeLbl.textContent=LANGUAGES.find(l=>l.code===code)?.name||'English';
+}
+function confirmLanguage(){
+  const lang=LANGUAGES.find(l=>l.code===activeLang);
+  toast(`Language set to ${lang?.name||'English'}!`,'success');
+  showTab('welcomeTab');
+}
+
+function getChatSystem(type){
+  const ln=LANGUAGES.find(l=>l.code===activeLang)?.name||'English';
+  const bases={
+    student:`You are FinWell AI, a warm financial advisor for Indian students. Help with education loans, EMI, CIBIL, moratorium periods, government schemes (CSIS, Vidya Lakshmi), bank comparison, and post-grad planning. Concise answers under 200 words. Always respond in ${ln}.`,
+    employee:`You are FinWell AI, a sharp financial advisor for Indian salaried professionals. Specialize in home/personal loans, EMI planning, DTI ratio, CIBIL, prepayment strategies, and investments. Direct, number-backed advice under 200 words. Always respond in ${ln}.`,
+    scholar:`You are FinWell AI, a supportive advisor for Indian research scholars. Help with stipend management (CSIR/UGC/DBT), scholar loans, Section 80E tax benefits, and post-PhD transitions. Warm, practical advice under 200 words. Always respond in ${ln}.`,
+    general:`You are FinWell AI, a helpful Indian financial advisor. Answer questions about loans, EMI, CIBIL scores, bank rates, investments, and financial planning. Concise, practical answers under 200 words. Always respond in ${ln}.`
+  };
+  return bases[type]||bases.general;
+}
+
+// ══════════════════════════════════════════
+// BANK DATA
+// ══════════════════════════════════════════
+const BANKS=[
+  {id:"sbi",name:"SBI",rate:{student:8.15,employee:10.75,scholar:8.15},type:"PSU",emoji:"🏛️"},
+  {id:"canara",name:"Canara",rate:{student:8.70,employee:11.25,scholar:8.70},type:"PSU",emoji:"🏦"},
+  {id:"bob",name:"Bank of Baroda",rate:{student:8.25,employee:10.50,scholar:8.25},type:"PSU",emoji:"🏦"},
+  {id:"pnb",name:"PNB",rate:{student:8.45,employee:10.90,scholar:8.45},type:"PSU",emoji:"🏛️"},
+  {id:"union",name:"Union Bank",rate:{student:8.30,employee:10.60,scholar:8.30},type:"PSU",emoji:"🏛️"},
+  {id:"indian",name:"Indian Bank",rate:{student:8.20,employee:10.70,scholar:8.20},type:"PSU",emoji:"🏦"},
+  {id:"iob",name:"IOB",rate:{student:8.55,employee:10.95,scholar:8.55},type:"PSU",emoji:"🏛️"},
+  {id:"central",name:"Central Bank",rate:{student:8.40,employee:10.80,scholar:8.40},type:"PSU",emoji:"🏦"},
+  {id:"uco",name:"UCO Bank",rate:{student:8.50,employee:11.00,scholar:8.50},type:"PSU",emoji:"🏛️"},
+  {id:"hdfc",name:"HDFC",rate:{student:9.50,employee:11.00,scholar:9.50},type:"Private",emoji:"🔷"},
+  {id:"icici",name:"ICICI",rate:{student:9.85,employee:11.50,scholar:9.85},type:"Private",emoji:"🔶"},
+  {id:"axis",name:"Axis",rate:{student:10.00,employee:12.00,scholar:10.00},type:"Private",emoji:"🟠"},
+  {id:"kotak",name:"Kotak",rate:{student:10.25,employee:12.50,scholar:10.25},type:"Private",emoji:"🔴"},
+  {id:"idfc",name:"IDFC First",rate:{student:10.50,employee:13.00,scholar:10.50},type:"Private",emoji:"🟣"},
+  {id:"yes",name:"Yes Bank",rate:{student:11.00,employee:13.50,scholar:11.00},type:"Private",emoji:"🟢"},
+  {id:"federal",name:"Federal",rate:{student:9.60,employee:11.80,scholar:9.60},type:"Private",emoji:"🔵"},
+];
+const selectedBanks={s:new Set(),e:new Set(),sc:new Set()};
+const chatHistoriesData={student:[],employee:[],scholar:[]};
+const checklistState={s:{},e:{},sc:{}};
+
+const CHECKLISTS={
+  student:[
+    {id:"c1",title:"Check CIBIL score of co-applicant/guarantor",desc:"Most banks require 700+. Parents often co-sign education loans."},
+    {id:"c2",title:"Gather admission documents",desc:"Offer letter + fee structure are mandatory for loan processing."},
+    {id:"c3",title:"Research moratorium period",desc:"EMI usually starts 6 months after course or job placement."},
+    {id:"c4",title:"Compare processing fees",desc:"SBI charges none. Others charge 0–2%."},
+    {id:"c5",title:"Check collateral requirements",desc:"Loans above ₹7.5L often need property as collateral."},
+    {id:"c6",title:"Explore government subsidy schemes",desc:"Check CSIS (Central Sector Interest Subsidy) for EWS/LIG students."},
+    {id:"c7",title:"Estimate total cost of education",desc:"Include tuition, hostel, books, laptop, travel."},
+    {id:"c8",title:"Open a savings account at target bank",desc:"Existing customers get faster approvals."},
+  ],
+  employee:[
+    {id:"c1",title:"Obtain your latest CIBIL score report",desc:"Score 750+ gets best rates. Check free at BankBazaar."},
+    {id:"c2",title:"Gather income proof documents",desc:"Last 3 salary slips, Form 16, 6-month bank statements."},
+    {id:"c3",title:"Calculate your existing EMI obligations",desc:"Total EMI should not exceed 40–50% of take-home salary."},
+    {id:"c4",title:"Decide on fixed vs floating rate",desc:"Fixed = predictable. Floating = lower now but varies."},
+    {id:"c5",title:"Check employer standing",desc:"Listed company employees often get 0.5–1% rate concession."},
+    {id:"c6",title:"Arrange down payment funds",desc:"Home loans need 10–25% down payment."},
+    {id:"c7",title:"Get property/asset documents ready",desc:"Sale agreement, valuation report, NOC needed."},
+    {id:"c8",title:"Compare prepayment penalty clauses",desc:"PSU banks: 0% penalty. Private: 2–5%."},
+  ],
+  scholar:[
+    {id:"c1",title:"Confirm stipend continuity period",desc:"Know how many years stipend is guaranteed."},
+    {id:"c2",title:"Check if scholarship covers all expenses",desc:"Calculate actual monthly surplus after rent, food, books."},
+    {id:"c3",title:"Explore institute-linked loan schemes",desc:"IITs, IISc have tie-ups with SBI/HDFC."},
+    {id:"c4",title:"Understand tax benefits on interest",desc:"Section 80E allows full interest deduction on education loans."},
+    {id:"c5",title:"Plan for post-scholar income timeline",desc:"Map stable income timeline — PhD takes 4–6 years."},
+    {id:"c6",title:"Build an emergency fund first",desc:"Save 3 months of expenses before any loan."},
+    {id:"c7",title:"Research fellowship top-up options",desc:"CSIR/UGC/DBT have additional travel/conference grants."},
+    {id:"c8",title:"Get guarantor agreement from family",desc:"Most banks require parent as guarantor for scholar loans."},
+  ]
+};
+const QUICK_QS={
+  student:["What CIBIL score is needed?","How does moratorium work?","SBI vs HDFC loan?","How to calculate EMI?","Can I prepay?","What documents needed?"],
+  employee:["Home loan on ₹60k salary?","Fixed vs floating rate?","How to prepay smartly?","What is DTI ratio?","How to improve CIBIL?","SBI YONO loan?"],
+  scholar:["Loan on stipend possible?","Section 80E tax benefit?","Best scholar bank?","Manage stipend + EMI?","When to start SIP?","What is moratorium?"]
+};
+
+// ══════════════════════════════════════════
+// AUTH
+// ══════════════════════════════════════════
+auth.onAuthStateChanged(user=>{
+  const overlay=document.getElementById("authInitOverlay");
+  if(user){
+    currentUserId=user.uid;
+    document.getElementById("userAvatarInitial").textContent=user.email[0].toUpperCase();
+    document.getElementById("userPillEmail").textContent=user.email;
+    document.getElementById("userPill").style.display="inline-flex";
+    const name=user.email.split("@")[0];
+    document.getElementById("welcomeMsg").textContent=`Welcome back, ${name}! 👋`;
+    document.getElementById("langWelcomeMsg").textContent=`Welcome, ${name}! 👋`;
+    renderLangGrid(); showTab("langTab");
+  } else { showTab("loginTab"); }
+  overlay.style.opacity="0"; setTimeout(()=>overlay.remove(),350);
+  initFloatChat();
+});
+
+async function register(){
+  const email=document.getElementById("registerEmail").value.trim(),pass=document.getElementById("registerPassword").value.trim();
+  if(!email||!pass){toast("Please fill in all fields.","error");return;}
+  if(pass.length<6){toast("Password must be at least 6 characters.","error");return;}
+  showSpinner("Creating account...");
+  try{const c=await auth.createUserWithEmailAndPassword(email,pass);await db.collection("users").doc(c.user.uid).set({email,createdAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});hideSpinner();toast("Account created! Please login.","success");showTab("loginTab");}
+  catch(e){hideSpinner();toast("Registration failed: "+e.message,"error");}
+}
+async function login(){
+  const email=document.getElementById("loginEmail").value.trim(),pass=document.getElementById("loginPassword").value.trim();
+  if(!email||!pass){toast("Please enter email and password.","error");return;}
+  showSpinner("Signing in...");
+  try{
+    const c=await auth.signInWithEmailAndPassword(email,pass);
+    currentUserId=c.user.uid;
+    document.getElementById("userAvatarInitial").textContent=c.user.email[0].toUpperCase();
+    document.getElementById("userPillEmail").textContent=c.user.email;
+    document.getElementById("userPill").style.display="inline-flex";
+    const name=c.user.email.split("@")[0];
+    document.getElementById("welcomeMsg").textContent=`Welcome back, ${name}! 👋`;
+    document.getElementById("langWelcomeMsg").textContent=`Welcome, ${name}! 👋`;
+    hideSpinner();toast("Logged in!","success");renderLangGrid();showTab("langTab");
+  }catch(e){hideSpinner();toast("Login failed: "+e.message,"error");}
+}
+async function resetPassword(){
+  const email=document.getElementById("resetEmail").value.trim();
+  if(!email){toast("Please enter your email.","error");return;}
+  showSpinner("Sending reset email...");
+  try{await auth.sendPasswordResetEmail(email);hideSpinner();toast("Reset email sent!","success");showTab("loginTab");}
+  catch(e){hideSpinner();toast("Reset failed: "+e.message,"error");}
+}
+async function logout(){
+  try{await auth.signOut();currentUserId="";toast("Logged out.","info");showTab("loginTab");}
+  catch(e){toast("Logout failed.","error");}
+}
+
+function toast(msg,type="info",dur=3200){
+  const icons={success:"✅",error:"❌",info:"ℹ️"};
+  const el=document.createElement("div");el.className=`toast toast-${type}`;el.innerHTML=`<span>${icons[type]}</span><span>${msg}</span>`;
+  document.getElementById("toast-container").appendChild(el);
+  setTimeout(()=>{el.style.animation="toastOut .25s ease forwards";setTimeout(()=>el.remove(),250);},dur);
+}
+function showSpinner(t="Analyzing..."){document.getElementById("spinnerText").textContent=t;document.getElementById("spinnerOverlay").classList.add("active");}
+function hideSpinner(){document.getElementById("spinnerOverlay").classList.remove("active");}
+function showTab(id){document.querySelectorAll(".tab-content").forEach(t=>t.classList.remove("active"));document.getElementById(id)?.classList.add("active");}
+function switchOuter(type,section,btn){
+  document.querySelectorAll(`#${type}-outernav .outer-tab`).forEach(b=>b.classList.remove("active"));
+  if(btn) btn.classList.add("active");
+  document.querySelectorAll(`#${type}Tab .step-content`).forEach(s=>s.classList.remove("active"));
+  document.getElementById(`${type}-${section}`)?.classList.add("active");
+  if(section==="history")     loadHistory(type);
+  if(section==="analysis")    refreshBankSummary(type);
+  if(section==="preloan")     renderChecklist(type);
+  if(section==="chatbot")     initChatbot(type);
+  if(section==="emi")         renderEMICalc(type);
+  if(section==="outstanding") renderOutstanding(type);
+}
+function selectType(type,card){
+  const name=document.getElementById("userName").value.trim();
+  if(!name){toast("Please enter your name first.","error");return;}
+  document.querySelectorAll(".user-card").forEach(c=>c.classList.remove("selected"));card.classList.add("selected");
+  setTimeout(()=>showTab(type+"Tab"),260);
+}
+
+// ══════════════════════════════════════════
+// BANK LOGIC
+// ══════════════════════════════════════════
+function renderBankGrid(prefix,userType){
+  document.getElementById(`${prefix}_bankGrid`).innerHTML=BANKS.map(b=>`
+    <div class="bank-chip" id="chip_${prefix}_${b.id}" onclick="toggleBank('${prefix}','${b.id}','${userType}')">
+      <div class="chip-check">✓</div>
+      <div class="bank-chip-name">${b.emoji} ${b.name}</div>
+      <div class="bank-chip-rate">${b.rate[userType]}%</div>
+      <div class="bank-chip-type">${b.type}</div>
+    </div>`).join('');
+}
+function toggleBank(p,id,ut){
+  const set=selectedBanks[p],chip=document.getElementById(`chip_${p}_${id}`);
+  set.has(id)?(set.delete(id),chip.classList.remove('selected')):(set.add(id),chip.classList.add('selected'));
+  updateBankInfo(p,ut);
+}
+function selectAllBanks(p,ut){BANKS.forEach(b=>{selectedBanks[p].add(b.id);document.getElementById(`chip_${p}_${b.id}`).classList.add('selected');});updateBankInfo(p,ut);}
+function clearBanks(p,ut){BANKS.forEach(b=>{selectedBanks[p].delete(b.id);document.getElementById(`chip_${p}_${b.id}`).classList.remove('selected');});updateBankInfo(p,ut);}
+function selectPSU(p,ut){BANKS.filter(b=>b.type==="PSU").forEach(b=>{selectedBanks[p].add(b.id);document.getElementById(`chip_${p}_${b.id}`).classList.add('selected');});updateBankInfo(p,ut);}
+function selectPrivate(p,ut){BANKS.filter(b=>b.type==="Private").forEach(b=>{selectedBanks[p].add(b.id);document.getElementById(`chip_${p}_${b.id}`).classList.add('selected');});updateBankInfo(p,ut);}
+function updateBankInfo(p,ut){
+  const el=document.getElementById(`${p}_bankInfo`),sel=[...selectedBanks[p]];
+  if(!sel.length){el.style.display='none';return;}
+  el.style.display='flex';
+  el.innerHTML=`<span style="color:#64748b;font-size:11px">${sel.length} selected:</span>`+sel.map(id=>{const b=BANKS.find(x=>x.id===id);return `<span class="rate-tag">${b.name} ${b.rate[ut]}%</span>`;}).join('');
+}
+function refreshBankSummary(type){
+  const map={student:'s',employee:'e',scholar:'sc'};const p=map[type];
+  const el=document.getElementById(`${p}_selected_banks_summary`),sel=[...selectedBanks[p]];
+  if(!sel.length){el.style.display='none';return;}
+  el.style.display='flex';
+  el.innerHTML=`<span style="color:#64748b;font-size:11px">Banks:</span>`+sel.map(id=>{const b=BANKS.find(x=>x.id===id);return `<span class="rate-tag">${b.name} ${b.rate[type]}%</span>`;}).join('');
+}
+function getPrimaryRate(p,ut,custom){
+  if(custom&&custom>0) return custom;
+  const sel=[...selectedBanks[p]];
+  if(!sel.length) return null;
+  return Math.min(...sel.map(id=>BANKS.find(x=>x.id===id).rate[ut]));
+}
+function getBankNames(p,ut){
+  const sel=[...selectedBanks[p]];
+  return sel.length?sel.map(id=>{const b=BANKS.find(x=>x.id===id);return `${b.name}(${b.rate[ut]}%)`;}).join(', '):"N/A";
+}
+function buildCompareTable(p,ut,loan,years,salary,expenses,otherEMI){
+  const sel=[...selectedBanks[p]];if(sel.length<2) return '';
+  const rows=sel.map(id=>{
+    const b=BANKS.find(x=>x.id===id),rate=b.rate[ut],emi=calcEMI(loan,rate,years),totalPay=emi*years*12,totalInt=totalPay-loan;
+    const disp=(salary||0)-emi-(expenses||0)-(otherEMI||0),dti=salary?(emi/salary)*100:0,score=getScore(dti,years,rate);
+    return{b,rate,emi,totalInt,disp,dti,score};
+  }).sort((a,b)=>a.emi-b.emi);
+  const maxEmi=Math.max(...rows.map(r=>r.emi));
+  const sc=s=>s>=75?"#22c55e":s>=50?"#eab308":"#ef4444";
+  return `<h3 style="font-size:14px;font-weight:700;color:#f1f5f9;margin:22px 0 11px">🏦 Bank-wise EMI Comparison</h3>
+  <div class="compare-wrap"><table class="bank-compare-table">
+  <thead><tr><th>Bank</th><th>Rate</th><th>Monthly EMI</th><th>Total Interest</th><th>Disposable</th><th>Score</th></tr></thead>
+  <tbody>${rows.map((r,i)=>`<tr class="${i===0?'best-row':''}">
+    <td>${r.b.emoji} ${r.b.name}${i===0?'<span class="best-badge">Best</span>':''}</td>
+    <td style="font-family:'DM Mono',monospace">${r.rate}%</td>
+    <td><div class="emi-bar-wrap"><span style="font-family:'DM Mono',monospace;min-width:65px">₹${fmt(r.emi)}</span><div class="emi-bar" style="width:${Math.round(r.emi/maxEmi*90)}px;background:${i===0?'#22c55e':'#3b82f6'}"></div></div></td>
+    <td style="font-family:'DM Mono',monospace">₹${fmt(r.totalInt)}</td>
+    <td style="color:${r.disp>0?'#4ade80':'#f87171'};font-family:'DM Mono',monospace">₹${fmt(r.disp)}</td>
+    <td style="color:${sc(r.score)};font-weight:700">${r.score}</td>
+  </tr>`).join('')}</tbody></table></div>
+  <div style="font-size:11px;color:#475569;margin-bottom:16px">💡 Choosing ${rows[0].b.name} saves ₹${fmt(rows[rows.length-1].emi-rows[0].emi)}/mo vs ${rows[rows.length-1].b.name}</div>`;
+}
+const fmt=n=>Math.round(n).toLocaleString('en-IN');
+function calcEMI(p,r,y){if(!p||!y) return 0;const rate=r/12/100,n=y*12;if(!rate) return p/n;return(p*rate*Math.pow(1+rate,n))/(Math.pow(1+rate,n)-1);}
+function getScore(dti,years,rate){let s=100;if(dti>50)s-=50;else if(dti>40)s-=35;else if(dti>30)s-=20;else if(dti>20)s-=10;if(years>15)s-=15;else if(years>10)s-=8;if(rate>12)s-=10;else if(rate>8)s-=5;return Math.max(0,Math.min(100,s));}
+function getRisk(score){
+  if(score>=75) return{label:"LOW RISK ✅",color:"#22c55e",advice:"Your financial burden is manageable. Stay consistent with repayments."};
+  if(score>=50) return{label:"MODERATE RISK ⚠️",color:"#eab308",advice:"Manageable but be cautious. Avoid new loans and build an emergency fund."};
+  return{label:"HIGH RISK 🚨",color:"#ef4444",advice:"Repayment burden is very high. Consider extending tenure or increasing income."};
+}
+
+// ══════════════════════════════════════════
+// EMI CALCULATOR WITH SLIDERS
+// ══════════════════════════════════════════
+function renderEMICalc(type){
+  const map={student:'s',employee:'e',scholar:'sc'};const p=map[type];
+  const el=document.getElementById(`emiCalcHTML_${p}`);
+  if(el.dataset.init) return; el.dataset.init="1";
+  el.innerHTML=`
+  <div class="emi-hero-cards">
+    <div class="emi-hero-card"><div class="emi-hero-val" id="ec_emi_${p}" style="color:#60a5fa">₹0</div><div class="emi-hero-lbl">Monthly EMI</div></div>
+    <div class="emi-hero-card"><div class="emi-hero-val" id="ec_totalInt_${p}" style="color:#f87171">₹0</div><div class="emi-hero-lbl">Total Interest</div></div>
+    <div class="emi-hero-card"><div class="emi-hero-val" id="ec_totalAmt_${p}" style="color:#4ade80">₹0</div><div class="emi-hero-lbl">Total Amount</div></div>
+  </div>
+  <div class="emi-slider-group">
+    <div class="emi-slider-header"><span class="emi-slider-label">💰 Loan Amount</span><span class="emi-slider-val" id="ecLbl_loan_${p}">₹5,00,000</span></div>
+    <input type="range" id="ecSlider_loan_${p}" min="50000" max="10000000" step="10000" value="500000" oninput="updateEMICalc('${p}')">
+    <div style="display:flex;justify-content:space-between;font-size:10px;color:#475569;margin-top:3px"><span>₹50K</span><span>₹1Cr</span></div>
+  </div>
+  <div class="emi-slider-group">
+    <div class="emi-slider-header"><span class="emi-slider-label">📅 Loan Tenure</span><span class="emi-slider-val" id="ecLbl_tenure_${p}">7 Years</span></div>
+    <input type="range" id="ecSlider_tenure_${p}" min="1" max="30" step="1" value="7" oninput="updateEMICalc('${p}')">
+    <div style="display:flex;justify-content:space-between;font-size:10px;color:#475569;margin-top:3px"><span>1 Yr</span><span>30 Yrs</span></div>
+  </div>
+  <div class="emi-slider-group">
+    <div class="emi-slider-header"><span class="emi-slider-label">📊 Interest Rate</span><span class="emi-slider-val" id="ecLbl_rate_${p}">8.15%</span></div>
+    <input type="range" id="ecSlider_rate_${p}" min="5" max="20" step="0.05" value="8.15" oninput="updateEMICalc('${p}')">
+    <div style="display:flex;justify-content:space-between;font-size:10px;color:#475569;margin-top:3px"><span>5%</span><span>20%</span></div>
+  </div>
+  <div class="emi-breakdown">
+    <div class="emi-breakdown-item"><div class="emi-breakdown-label">Principal Amount</div><div class="emi-breakdown-val" id="ec_principal_${p}" style="color:#60a5fa">₹0</div></div>
+    <div class="emi-breakdown-item"><div class="emi-breakdown-label">Total Interest Payable</div><div class="emi-breakdown-val" id="ec_interest_${p}" style="color:#f87171">₹0</div></div>
+    <div class="emi-breakdown-item"><div class="emi-breakdown-label">Interest % of Principal</div><div class="emi-breakdown-val" id="ec_intpct_${p}" style="color:#eab308">0%</div></div>
+    <div class="emi-breakdown-item"><div class="emi-breakdown-label">Debt-Free Year</div><div class="emi-breakdown-val" id="ec_year_${p}" style="color:#4ade80">${new Date().getFullYear()}</div></div>
+  </div>
+  <div style="background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.18);border-radius:13px;padding:14px 16px">
+    <div style="font-size:12px;font-weight:700;color:#60a5fa;margin-bottom:10px">🏦 Compare with Best PSU Banks</div>
+    <div id="ec_bankCompare_${p}" style="font-size:12px;color:#94a3b8"></div>
+  </div>`;
+  updateEMICalc(p);
+}
+function updateEMICalc(p){
+  const loan=+document.getElementById(`ecSlider_loan_${p}`).value;
+  const tenure=+document.getElementById(`ecSlider_tenure_${p}`).value;
+  const rate=+document.getElementById(`ecSlider_rate_${p}`).value;
+  document.getElementById(`ecLbl_loan_${p}`).textContent=`₹${fmt(loan)}`;
+  document.getElementById(`ecLbl_tenure_${p}`).textContent=`${tenure} Year${tenure>1?'s':''}`;
+  document.getElementById(`ecLbl_rate_${p}`).textContent=`${rate}%`;
+  const emi=calcEMI(loan,rate,tenure),totalAmt=emi*tenure*12,totalInt=totalAmt-loan;
+  document.getElementById(`ec_emi_${p}`).textContent=`₹${fmt(emi)}`;
+  document.getElementById(`ec_totalInt_${p}`).textContent=`₹${fmt(totalInt)}`;
+  document.getElementById(`ec_totalAmt_${p}`).textContent=`₹${fmt(totalAmt)}`;
+  document.getElementById(`ec_principal_${p}`).textContent=`₹${fmt(loan)}`;
+  document.getElementById(`ec_interest_${p}`).textContent=`₹${fmt(totalInt)}`;
+  document.getElementById(`ec_intpct_${p}`).textContent=`${((totalInt/loan)*100).toFixed(1)}%`;
+  document.getElementById(`ec_year_${p}`).textContent=`${new Date().getFullYear()+tenure}`;
+  const ut=p==='s'?'student':p==='e'?'employee':'scholar';
+  const psuBanks=BANKS.filter(b=>b.type==="PSU").slice(0,4);
+  document.getElementById(`ec_bankCompare_${p}`).innerHTML=psuBanks.map(b=>{
+    const bEmi=calcEMI(loan,b.rate[ut],tenure),saving=emi-bEmi;
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.04)">
+      <span>${b.emoji} ${b.name} <span style="color:#64748b">${b.rate[ut]}%</span></span>
+      <span style="font-family:'DM Mono',monospace;color:${b.rate[ut]<=rate?'#4ade80':'#f87171'}">₹${fmt(bEmi)}/mo ${saving>0?`<span style="color:#4ade80;font-size:10px">(save ₹${fmt(saving)})</span>`:''}</span>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════
+// OUTSTANDING BALANCE TRACKER
+// ══════════════════════════════════════════
+function renderOutstanding(type){
+  const map={student:'s',employee:'e',scholar:'sc'};const p=map[type];
+  const el=document.getElementById(`outstandingHTML_${p}`);
+  if(el.dataset.init) return; el.dataset.init="1";
+  el.innerHTML=`
+  <div style="background:rgba(59,130,246,0.05);border:1px solid rgba(59,130,246,0.18);border-radius:13px;padding:16px;margin-bottom:18px">
+    <div style="font-size:12px;font-weight:700;color:#60a5fa;margin-bottom:14px;text-transform:uppercase;letter-spacing:.05em">📥 Enter Your Loan Details</div>
+    <div class="form-grid" style="gap:10px">
+      <div class="form-group"><label class="field-label">Original Loan Amount (₹)</label><input type="number" id="ob_loan_${p}" placeholder="e.g. 500000" oninput="calcOutstanding('${p}')"></div>
+      <div class="form-group"><label class="field-label">Annual Interest Rate (%)</label><input type="number" id="ob_rate_${p}" placeholder="e.g. 8.15" oninput="calcOutstanding('${p}')"></div>
+      <div class="form-group"><label class="field-label">Total Loan Tenure (Years)</label><input type="number" id="ob_tenure_${p}" placeholder="e.g. 7" oninput="calcOutstanding('${p}')"></div>
+      <div class="form-group"><label class="field-label">EMIs Already Paid (Months)</label><input type="number" id="ob_paid_${p}" placeholder="e.g. 12" oninput="calcOutstanding('${p}')"></div>
+    </div>
+  </div>
+  <div id="ob_result_${p}"></div>`;
+}
+function calcOutstanding(p){
+  const loan=+document.getElementById(`ob_loan_${p}`).value||0;
+  const rate=+document.getElementById(`ob_rate_${p}`).value||0;
+  const tenure=+document.getElementById(`ob_tenure_${p}`).value||0;
+  const paid=+document.getElementById(`ob_paid_${p}`).value||0;
+  const el=document.getElementById(`ob_result_${p}`);
+  if(!loan||!rate||!tenure){el.innerHTML='';return;}
+  const n=tenure*12,emi=calcEMI(loan,rate,tenure);
+  let balance=loan,totalIntPaid=0,totalPrinPaid=0;
+  const schedule=[];
+  for(let m=1;m<=n;m++){
+    const intComp=balance*(rate/12/100),prinComp=emi-intComp;
+    balance=Math.max(0,balance-prinComp);
+    if(m<=paid){totalIntPaid+=intComp;totalPrinPaid+=prinComp;}
+    schedule.push({month:m,emi,interest:intComp,principal:prinComp,balance});
+  }
+  const outstanding=paid<n?schedule[paid-1]?.balance??loan:0;
+  const paidPct=paid>0?Math.round((paid/n)*100):0;
+  const remainMo=Math.max(0,n-paid);
+  const totalIntRemaining=schedule.slice(paid).reduce((s,r)=>s+r.interest,0);
+  el.innerHTML=`
+  <div class="outstanding-header">
+    <div class="outstanding-card"><div class="outstanding-card-val" style="color:#ef4444">₹${fmt(outstanding)}</div><div class="outstanding-card-lbl">Outstanding Balance</div></div>
+    <div class="outstanding-card"><div class="outstanding-card-val" style="color:#4ade80">₹${fmt(totalPrinPaid)}</div><div class="outstanding-card-lbl">Principal Repaid</div></div>
+    <div class="outstanding-card"><div class="outstanding-card-val" style="color:#f87171">₹${fmt(totalIntPaid)}</div><div class="outstanding-card-lbl">Interest Paid</div></div>
+    <div class="outstanding-card"><div class="outstanding-card-val" style="color:#60a5fa">${remainMo} mo</div><div class="outstanding-card-lbl">Months Remaining</div></div>
+  </div>
+  <div class="balance-progress-wrap">
+    <div class="balance-progress-header"><span style="color:#64748b;font-size:12px">Loan Repaid Progress</span><span style="color:#4ade80;font-weight:700;font-size:12px">${paidPct}% Complete</span></div>
+    <div class="balance-progress-bar-outer"><div class="balance-progress-bar-inner" style="width:${paidPct}%"></div></div>
+    <div style="display:flex;justify-content:space-between;font-size:10px;color:#475569;margin-top:4px"><span>Month 0</span><span>Month ${paid} (current)</span><span>Month ${n}</span></div>
+  </div>
+  <div class="month-highlight">
+    <div class="month-highlight-icon">📅</div>
+    <div><div class="month-highlight-title">Current Month (EMI #${paid})</div>
+    <div class="month-highlight-detail">Monthly EMI: ₹${fmt(emi)} &nbsp;|&nbsp; Principal this EMI: ₹${fmt(schedule[Math.max(0,paid-1)]?.principal||0)} &nbsp;|&nbsp; Interest this EMI: ₹${fmt(schedule[Math.max(0,paid-1)]?.interest||0)}</div></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px">
+    <div class="emi-breakdown-item"><div class="emi-breakdown-label">Interest Remaining</div><div class="emi-breakdown-val" style="color:#f87171">₹${fmt(totalIntRemaining)}</div></div>
+    <div class="emi-breakdown-item"><div class="emi-breakdown-label">Debt-Free By</div><div class="emi-breakdown-val" style="color:#4ade80">${getDebtFreeDate(paid,n)}</div></div>
+  </div>
+  <div style="margin-bottom:10px">
+    <div style="font-size:13px;font-weight:700;color:#f1f5f9;margin-bottom:10px">📋 Amortization Schedule</div>
+    <div class="amortization-wrap">
+      <table class="amortization-table">
+        <thead><tr><th style="text-align:left">Month</th><th>EMI (₹)</th><th>Principal (₹)</th><th>Interest (₹)</th><th>Balance (₹)</th><th>Status</th></tr></thead>
+        <tbody>${schedule.slice(0,Math.min(n,120)).map((row,i)=>{
+          const isPaid=i<paid,isCurrent=i===paid-1;
+          return `<tr class="${isCurrent?'current-month':''}">
+            <td style="text-align:left;color:${isCurrent?'#60a5fa':i<paid?'#475569':'#cbd5e1'}">Month ${row.month}</td>
+            <td>₹${fmt(row.emi)}</td><td style="color:#4ade80">₹${fmt(row.principal)}</td>
+            <td style="color:#f87171">₹${fmt(row.interest)}</td>
+            <td style="color:${row.balance<loan*0.25?'#4ade80':row.balance<loan*0.5?'#eab308':'#cbd5e1'}">₹${fmt(row.balance)}</td>
+            <td style="color:${isCurrent?'#60a5fa':isPaid?'#4ade80':'#475569'}">${isCurrent?'◀ Now':isPaid?'✓ Paid':'Pending'}</td>
+          </tr>`;
+        }).join('')}
+        ${n>120?`<tr><td colspan="6" style="text-align:center;color:#475569;padding:10px">... ${n-120} more months (total ${n} months)</td></tr>`:''}
+        </tbody>
+      </table>
+    </div>
+  </div>`;
+}
+function getDebtFreeDate(paid,n){
+  const d=new Date();d.setMonth(d.getMonth()+(n-paid));
+  return d.toLocaleDateString('en-IN',{month:'short',year:'numeric'});
+}
+
+// ══════════════════════════════════════════
+// FIRESTORE
+// ══════════════════════════════════════════
+async function saveAnalysis(type,data){
+  if(!currentUserId) return;
+  try{await db.collection("users").doc(currentUserId).collection("analyses").add({type,data,clientTimestamp:Date.now(),timestamp:firebase.firestore.FieldValue.serverTimestamp()});}
+  catch(e){console.error("Save:",e);}
+}
+async function loadHistory(type){
+  const listEl=document.getElementById(`${type}-history-list`);
+  listEl.innerHTML=`<div style="color:#475569;font-size:12px;padding:14px 0">Loading...</div>`;
+  if(!currentUserId){listEl.innerHTML=`<div class="history-empty"><div class="history-empty-icon">🔒</div><p>Login to see history</p></div>`;return;}
+  try{
+    const snap=await db.collection("users").doc(currentUserId).collection("analyses").where("type","==",type).get();
+    if(snap.empty){listEl.innerHTML=`<div class="history-empty"><div class="history-empty-icon">📭</div><p>No analyses yet.</p></div>`;return;}
+    const docs=snap.docs.sort((a,b)=>(b.data().clientTimestamp||0)-(a.data().clientTimestamp||0)).slice(0,10);
+    const icons={student:"🎓",employee:"💼",scholar:"🏅"},bgs={student:"rgba(59,130,246,0.12)",employee:"rgba(34,197,94,0.12)",scholar:"rgba(234,179,8,0.12)"};
+    const col=s=>s>=75?"#22c55e":s>=50?"#eab308":"#ef4444";
+    listEl.innerHTML=docs.map(doc=>{
+      const d=doc.data();const ts=d.clientTimestamp?new Date(d.clientTimestamp).toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"}):"—";const sc=d.data?.score||0;
+      return `<div class="history-item"><div class="history-left"><div class="history-icon" style="background:${bgs[type]}">${icons[type]}</div><div><div class="history-name">${d.data?.name||type} Analysis</div><div class="history-meta">${ts} · ₹${(d.data?.loan||0).toLocaleString()} · ${d.data?.bank||'—'}</div></div></div><div class="history-score" style="color:${col(sc)}">${sc}</div></div>`;
+    }).join('');
+  }catch(e){listEl.innerHTML=`<div style="color:#ef4444;font-size:12px;padding:14px 0">Error: ${e.message}</div>`;}
+}
+
+// ══════════════════════════════════════════
+// CHARTS
+// ══════════════════════════════════════════
+function renderCharts(id,emi,expenses,disposable,salary){
+  if(pieChart){pieChart.destroy();pieChart=null;}if(barChart){barChart.destroy();barChart=null;}
+  document.getElementById(id).insertAdjacentHTML("beforeend",`<div class="charts-grid"><div class="chart-box"><div class="chart-box-title">Income Breakdown</div><canvas id="pie_${id}" height="160"></canvas></div><div class="chart-box"><div class="chart-box-title">EMI vs Safe Limit</div><canvas id="bar_${id}" height="160"></canvas></div></div>`);
+  const sav=Math.max(0,disposable);
+  pieChart=new Chart(document.getElementById(`pie_${id}`),{type:"doughnut",data:{labels:["EMI","Expenses","Savings","Other"],datasets:[{data:[emi,expenses,sav,Math.max(0,salary-emi-expenses-sav)],backgroundColor:["#3b82f6","#8b5cf6","#22c55e","#64748b"],borderWidth:0,hoverOffset:5}]},options:{responsive:true,cutout:"65%",plugins:{legend:{position:"bottom",labels:{color:"#94a3b8",font:{size:10},boxWidth:9,padding:7}}}}});
+  barChart=new Chart(document.getElementById(`bar_${id}`),{type:"bar",data:{labels:["Your EMI","Safe Limit"],datasets:[{data:[emi,salary*0.3],backgroundColor:[emi>salary*0.3?"#ef4444":"#22c55e","#3b82f6"],borderRadius:7,borderSkipped:false}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{ticks:{color:"#64748b",font:{size:10}},grid:{display:false}},y:{ticks:{color:"#64748b",font:{size:10}},grid:{color:"rgba(255,255,255,0.04)"}}}}});
+}
+
+// ══════════════════════════════════════════
+// FIX 2: BUILD RESULT — Instant cards + skeleton AI box
+// ══════════════════════════════════════════
+function buildResult(id,rows,score,risk,insights,cd,compareHTML,instantData){
+  const mc=score>=75?"#22c55e":score>=50?"#eab308":"#ef4444";
+  // Instant summary cards shown immediately
+  const instantHTML=instantData?`
+  <div class="instant-results">
+    <div class="instant-card highlight">
+      <div class="instant-card-val" style="color:#60a5fa">₹${fmt(instantData.emi)}</div>
+      <div class="instant-card-lbl">Monthly EMI</div>
+    </div>
+    <div class="instant-card highlight">
+      <div class="instant-card-val" style="color:${instantData.disposable>0?'#4ade80':'#f87171'}">₹${fmt(Math.abs(instantData.disposable))}</div>
+      <div class="instant-card-lbl">${instantData.disposable>0?'Monthly Surplus':'Monthly Deficit'}</div>
+    </div>
+    <div class="instant-card highlight">
+      <div class="instant-card-val" style="color:${mc}">${score}<span style="font-size:13px;color:#64748b">/100</span></div>
+      <div class="instant-card-lbl">Health Score</div>
+    </div>
+  </div>`:'';
+
+  document.getElementById(id).innerHTML=`
+  ${instantHTML}
+  <div class="result-header"><div class="score-circle" style="border-color:${mc};color:${mc}"><div class="score-number">${score}</div><div class="score-label">/ 100</div></div><div><div class="risk-badge" style="background:${mc}20;color:${mc};border:1px solid ${mc}40">${risk.label}</div><div class="risk-advice">${risk.advice}</div></div></div>
+  <div class="meter-label"><span>High Risk</span><span>Low Risk</span></div><div class="meter-container"><div class="risk-meter-bar" id="mb_${id}" style="width:0%;background:${mc}"></div></div>
+  ${compareHTML}
+  <h3 style="font-size:14px;font-weight:700;color:#f1f5f9;margin-bottom:11px">📊 Detailed Report</h3>
+  <table class="report-table">${rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join('')}</table>
+  <h3 style="font-size:14px;font-weight:700;color:#f1f5f9;margin:18px 0 11px">💡 Smart Insights</h3>
+  ${insights.map(e=>`<div class="insight-card" style="border-left-color:${e.color}"><div class="insight-icon">${e.icon}</div><div><div class="insight-title" style="color:${e.color}">${e.title}</div><div class="insight-desc">${e.desc}</div></div></div>`).join('')}
+  <h3 style="font-size:14px;font-weight:700;color:#f1f5f9;margin:18px 0 11px">🤖 AI Personalized Analysis</h3>
+  <div class="ai-box"><div class="ai-box-header"><div class="ai-dot"></div><div class="ai-label-txt">Claude AI — Generating your analysis...</div></div>
+  <div id="aiText_${id}">
+    <div class="ai-skeleton">
+      <div class="ai-skeleton-line"></div>
+      <div class="ai-skeleton-line medium"></div>
+      <div class="ai-skeleton-line short"></div>
+      <div class="ai-skeleton-line"></div>
+      <div class="ai-skeleton-line medium"></div>
+    </div>
+  </div></div>`;
+  setTimeout(()=>{const b=document.getElementById(`mb_${id}`);if(b)b.style.width=score+"%";},100);
+  if(cd) renderCharts(id,cd.emi,cd.expenses,cd.disposable,cd.salary);
+}
+
+// ══════════════════════════════════════════
+// ANALYZE FUNCTIONS
+// ══════════════════════════════════════════
+async function analyzeStudent(){
+  const loan=+document.getElementById("s_loanAmount").value,years=+document.getElementById("s_loanYears").value,
+    salary=+document.getElementById("s_expectedSalary").value,expenses=+document.getElementById("s_expenses").value,
+    course=+document.getElementById("s_courseDuration").value,custom=+document.getElementById("s_interestRate").value||0;
+  const rate=getPrimaryRate('s','student',custom);
+  if(!rate){toast("Please select at least one bank.","error");return;}
+  if([loan,years,salary,expenses,course].some(v=>!v)){toast("Please fill in all fields.","error");return;}
+  showSpinner("Calculating...");
+  const bankNames=getBankNames('s','student'),compareHTML=buildCompareTable('s','student',loan,years,salary,expenses,0);
+  const emi=calcEMI(loan,rate,years),totalPay=emi*years*12,totalInt=totalPay-loan,
+    dti=(emi/salary)*100,disposable=salary-emi-expenses,savingRate=(disposable/salary)*100,
+    score=getScore(dti,years,rate),risk=getRisk(score);
+  // Show instant results immediately, then hide spinner
+  buildResult("s_result",[
+    ["Education Loan","₹"+fmt(loan)],["Banks Compared",bankNames],["Effective Rate",rate+"%"],
+    ["Loan Duration",years+" Years"],["Course Duration",course+" Years"],["Monthly EMI (post-grad)","₹"+fmt(emi)],
+    ["Total Payable","₹"+fmt(totalPay)],["Total Interest","₹"+fmt(totalInt)],
+    ["Expected Salary","₹"+fmt(salary)],["Monthly Expenses","₹"+fmt(expenses)],
+    ["EMI/Salary (DTI)",dti.toFixed(1)+"%"],["Monthly Disposable","₹"+fmt(disposable)],
+    ["Savings Rate",savingRate.toFixed(1)+"%"],["Debt-Free By ~",(new Date().getFullYear()+course+years)+""],
+    ["Health Score",score+" / 100"],["Risk Level",risk.label]
+  ],score,risk,[
+    {icon:"📅",title:"Repayment Timeline",color:"#3b82f6",desc:`EMI of ₹${fmt(emi)}/mo starts after ${course}-yr course. Debt-free by ~${new Date().getFullYear()+course+years}.`},
+    {icon:"💰",title:"Disposable Income",color:disposable>5000?"#22c55e":"#ef4444",desc:disposable>5000?`₹${fmt(disposable)}/mo left — healthy! Invest in SIPs.`:`Only ₹${fmt(disposable)}/mo left. Consider longer tenure.`},
+    {icon:"📈",title:"Savings Potential",color:savingRate>20?"#22c55e":"#eab308",desc:savingRate>20?`${savingRate.toFixed(1)}% savings rate — excellent!`:`Only ${savingRate.toFixed(1)}% savings. Aim for 20%+.`},
+    {icon:"🎯",title:"Career Target",color:"#8b5cf6",desc:`Aim for salary ≥ ₹${fmt(emi*4)}/mo to keep EMI below 25% of income.`}
+  ],{emi,expenses,disposable,salary},compareHTML,{emi,disposable});
+  currentResultId="s_result";
+  hideSpinner(); // Show results instantly, AI loads in background
+  toast("Results ready! AI analysis loading...","success");
+  document.getElementById("s_result").scrollIntoView({behavior:"smooth",block:"start"});
+  await saveAnalysis("student",{name:document.getElementById("userName").value.trim(),score,loan,emi:Math.round(emi),salary,dti:+dti.toFixed(1),bank:bankNames.split('(')[0]});
+  const langName=LANGUAGES.find(l=>l.code===activeLang)?.name||'English';
+  const ai=await callAI(`Student loan: ₹${fmt(loan)} at ${rate}% for ${years} yrs. Banks: ${bankNames}. Course: ${course} yrs. Salary: ₹${fmt(salary)}/mo. Expenses: ₹${fmt(expenses)}/mo. EMI: ₹${fmt(emi)}. DTI: ${dti.toFixed(1)}%. Score: ${score}/100 (${risk.label}). Give 3-4 sentences personalized advice. Respond in ${langName}.`,getChatSystem('student'));
+  const e=document.getElementById("aiText_s_result");
+  if(e){e.innerHTML=`<div class="ai-text">${ai.replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}</div>`;}
+}
+
+async function analyzeEmployee(){
+  const salary=+document.getElementById("e_salary").value,loan=+document.getElementById("e_loanAmount").value,
+    years=+document.getElementById("e_loanYears").value,expenses=+document.getElementById("e_expenses").value,
+    otherEMI=+document.getElementById("e_otherEMI").value||0,custom=+document.getElementById("e_interestRate").value||0;
+  const rate=getPrimaryRate('e','employee',custom);
+  if(!rate){toast("Please select at least one bank.","error");return;}
+  if([salary,loan,years,expenses].some(v=>!v)){toast("Please fill in all fields.","error");return;}
+  showSpinner("Calculating...");
+  const bankNames=getBankNames('e','employee'),compareHTML=buildCompareTable('e','employee',loan,years,salary,expenses,otherEMI);
+  const emi=calcEMI(loan,rate,years),totalEMI=emi+otherEMI,totalPay=emi*years*12,totalInt=totalPay-loan,
+    dti=(totalEMI/salary)*100,disposable=salary-totalEMI-expenses,
+    savingRate=Math.max(0,(disposable/salary)*100),score=getScore(dti,years,rate),risk=getRisk(score);
+  buildResult("e_result",[
+    ["Monthly Salary","₹"+fmt(salary)],["Loan Amount","₹"+fmt(loan)],["Banks Compared",bankNames],
+    ["Effective Rate",rate+"%"],["Loan Duration",years+" Years"],["Monthly EMI","₹"+fmt(emi)],
+    ["Other EMIs","₹"+fmt(otherEMI)],["Total EMI Outgo","₹"+fmt(totalEMI)],["Monthly Expenses","₹"+fmt(expenses)],
+    ["Total Interest","₹"+fmt(totalInt)],["DTI Ratio",dti.toFixed(1)+"%"],["Monthly Disposable","₹"+fmt(disposable)],
+    ["Savings Rate",savingRate.toFixed(1)+"%"],["Debt-Free By ~",(new Date().getFullYear()+years)+""],
+    ["Health Score",score+" / 100"],["Risk Level",risk.label]
+  ],score,risk,[
+    {icon:"📊",title:"Debt-to-Income",color:dti<30?"#22c55e":dti<50?"#eab308":"#ef4444",desc:`EMI is ${dti.toFixed(1)}% of salary. ${dti<30?"Safe zone!":dti<50?"Moderate — avoid new loans.":"Dangerously high."}`},
+    {icon:"💳",title:"Disposable Income",color:disposable>10000?"#22c55e":"#ef4444",desc:disposable>10000?`₹${fmt(disposable)}/mo free — invest in MFs or PPF.`:`Only ₹${fmt(disposable)}/mo left — risky.`},
+    {icon:"🏠",title:"Prepayment Strategy",color:"#3b82f6",desc:`Prepay ₹${fmt(emi*2)} extra/year to cut tenure 2-3 years.`},
+    {icon:"📈",title:"Savings & Investment",color:"#8b5cf6",desc:savingRate>20?`${savingRate.toFixed(1)}% savings — start SIP of ₹${fmt(disposable*0.5)}/mo.`:`Only ${savingRate.toFixed(1)}% savings. Boost income or cut spending.`}
+  ],{emi:totalEMI,expenses,disposable,salary},compareHTML,{emi:totalEMI,disposable});
+  currentResultId="e_result";
+  hideSpinner();
+  toast("Results ready! AI analysis loading...","success");
+  document.getElementById("e_result").scrollIntoView({behavior:"smooth",block:"start"});
+  await saveAnalysis("employee",{name:document.getElementById("userName").value.trim(),score,loan,emi:Math.round(emi),salary,dti:+dti.toFixed(1),bank:bankNames.split('(')[0]});
+  const langName=LANGUAGES.find(l=>l.code===activeLang)?.name||'English';
+  const ai=await callAI(`Employee loan: Salary ₹${fmt(salary)}/mo. Loan ₹${fmt(loan)} at ${rate}% for ${years} yrs. Banks: ${bankNames}. EMI: ₹${fmt(emi)}+₹${otherEMI} other. Expenses: ₹${fmt(expenses)}/mo. DTI: ${dti.toFixed(1)}%. Score: ${score}/100 (${risk.label}). Give 3-4 sentences actionable advice. Respond in ${langName}.`,getChatSystem('employee'));
+  const e=document.getElementById("aiText_e_result");
+  if(e){e.innerHTML=`<div class="ai-text">${ai.replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}</div>`;}
+}
+
+async function analyzeScholar(){
+  const stipend=+document.getElementById("sc_stipend").value,expenses=+document.getElementById("sc_expenses").value,
+    loan=+document.getElementById("sc_loanAmount").value||0,years=+document.getElementById("sc_loanYears").value||0,
+    income=+document.getElementById("sc_expectedIncome").value,custom=+document.getElementById("sc_interestRate").value||0;
+  if(!stipend||!expenses||!income){toast("Please fill in all required fields.","error");return;}
+  let rate=0,compareHTML='',bankNames='No Loan';
+  if(loan>0){rate=getPrimaryRate('sc','scholar',custom);if(!rate){toast("Please select at least one bank.","error");return;}bankNames=getBankNames('sc','scholar');compareHTML=buildCompareTable('sc','scholar',loan,years,income,expenses,0);}
+  showSpinner("Calculating...");
+  const emi=loan>0?calcEMI(loan,rate,years):0,totalPay=emi*years*12,totalInt=totalPay-loan,
+    surplus=stipend-expenses-emi,futureDTI=income>0?(emi/income)*100:0,
+    savingRate=stipend>0?Math.max(0,(surplus/stipend)*100):0,
+    score=loan>0?getScore(futureDTI,years,rate):90,risk=getRisk(score);
+  buildResult("sc_result",[
+    ["Monthly Stipend","₹"+fmt(stipend)],["Monthly Expenses","₹"+fmt(expenses)],
+    ["Loan Amount",loan>0?"₹"+fmt(loan):"No Loan"],["Banks Compared",bankNames],
+    ["Loan Rate",loan>0?rate+"%":"N/A"],["Monthly EMI",loan>0?"₹"+fmt(emi):"No EMI"],
+    ["Total Interest",loan>0?"₹"+fmt(totalInt):"N/A"],["Monthly Surplus","₹"+fmt(surplus)],
+    ["Savings Rate",savingRate.toFixed(1)+"%"],["Expected Income After","₹"+fmt(income)],
+    ["Future EMI/Income",loan>0?futureDTI.toFixed(1)+"%":"N/A"],["Health Score",score+" / 100"],["Risk Level",risk.label]
+  ],score,risk,[
+    {icon:"🏅",title:"Stipend Management",color:"#3b82f6",desc:surplus>0?`₹${fmt(surplus)}/mo surplus. Save 50%+ in RD.`:`Expenses exceed stipend by ₹${fmt(Math.abs(surplus))}/mo.`},
+    {icon:"🎯",title:"Future Readiness",color:futureDTI<30?"#22c55e":"#eab308",desc:loan>0?`Post-grad EMI will be ${futureDTI.toFixed(1)}% of ₹${fmt(income)} salary.`:`No loan! Full ₹${fmt(income)}/mo available.`},
+    {icon:"💡",title:"Smart Saving",color:"#8b5cf6",desc:`₹${fmt(Math.max(500,surplus*0.5))}/mo SIP for 5 years at 12% builds a solid corpus.`},
+    {icon:"📋",title:"Post-Study Plan",color:"#22c55e",desc:loan>0?"Prepay 1-2 extra EMIs/year to become debt-free faster.":`Build 6-month emergency fund (₹${fmt(income*6)}) first.`}
+  ],{emi:emi+expenses,expenses,disposable:surplus,salary:stipend},compareHTML,{emi,disposable:surplus});
+  currentResultId="sc_result";
+  hideSpinner();
+  toast("Results ready! AI analysis loading...","success");
+  document.getElementById("sc_result").scrollIntoView({behavior:"smooth",block:"start"});
+  await saveAnalysis("scholar",{name:document.getElementById("userName").value.trim(),score,loan,emi:Math.round(emi),salary:stipend,dti:+futureDTI.toFixed(1),bank:bankNames.split('(')[0]});
+  const langName=LANGUAGES.find(l=>l.code===activeLang)?.name||'English';
+  const ai=await callAI(`Scholar: Stipend ₹${fmt(stipend)}/mo. Expenses ₹${fmt(expenses)}/mo. Loan: ${loan>0?`₹${fmt(loan)} at ${rate}%`:"None"}. Surplus ₹${fmt(surplus)}/mo. Expected salary ₹${fmt(income)}/mo. Score: ${score}/100 (${risk.label}). Give 3-4 sentences encouraging advice. Respond in ${langName}.`,getChatSystem('scholar'));
+  const e=document.getElementById("aiText_sc_result");
+  if(e){e.innerHTML=`<div class="ai-text">${ai.replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}</div>`;}
+}
+
+// ══════════════════════════════════════════
+// FIX 1: PRE-LOAN SAVINGS — Properly styled result output
+// ══════════════════════════════════════════
+function calcPreLoan(p){
+  const get=id=>+document.getElementById(id)?.value||0;
+  let items=[];let summary='';
+
+  if(p==='s'){
+    const loan=get('s_pl_loan'),months=get('s_pl_months'),saving=get('s_pl_saving'),dpct=get('s_pl_dpct')||15;
+    if(!loan||!months) return;
+    const dpNeeded=loan*(dpct/100),totalSaved=saving*months,gap=dpNeeded-totalSaved;
+    const onTrack=totalSaved>=dpNeeded;
+    items=[
+      {label:`Down Payment Needed (${dpct}%)`,val:`₹${fmt(dpNeeded)}`,type:'neutral',color:'blue'},
+      {label:`Total Savings in ${months} months`,val:`₹${fmt(totalSaved)}`,type:onTrack?'positive':'negative',color:onTrack?'green':'red'},
+      onTrack
+        ?{label:'Surplus After Down Payment',val:`₹${fmt(Math.abs(gap))}`,type:'positive',color:'green'}
+        :{label:'Extra Saving Needed / Month',val:`₹${fmt(Math.ceil(gap/months))}`,type:'negative',color:'red'}
+    ];
+    summary=onTrack
+      ?`<strong>You're on track!</strong> You'll save ₹${fmt(totalSaved)} over ${months} months, covering the ₹${fmt(dpNeeded)} down payment with ₹${fmt(Math.abs(gap))} to spare.`
+      :`<strong>Shortfall detected.</strong> You need to save an extra ₹${fmt(Math.ceil(gap/months))}/mo to meet the ₹${fmt(dpNeeded)} down payment goal in ${months} months.`;
+
+  } else if(p==='e'){
+    const salary=get('e_pl_salary'),loan=get('e_pl_loan'),saving=get('e_pl_saving'),dp=get('e_pl_dp');
+    if(!salary||!loan) return;
+    const maxEmi=salary*0.4,maxLoan30=salary*0.3*12*20,safe=loan<=maxLoan30;
+    const gap=dp-saving,mthsToDP=gap>0?Math.ceil(gap/(salary*0.2)):0;
+    items=[
+      {label:'Max Safe EMI (40% of Salary)',val:`₹${fmt(maxEmi)}`,type:'neutral',color:'blue'},
+      {label:'Recommended Max Loan Amount',val:`₹${fmt(maxLoan30)}`,type:'neutral',color:'blue'},
+      {label:'Your Loan Assessment',val:safe?'✅ Within Safe Limit':'⚠️ Exceeds Safe Limit',type:safe?'positive':'negative',color:safe?'green':'red'},
+    ];
+    if(dp){
+      items.push({label:'Months to Reach Down Payment',val:mthsToDP<=0?'Already achieved! 🎉':`${mthsToDP} months`,type:mthsToDP<=12?'positive':'neutral',color:mthsToDP<=12?'green':'yellow'});
+    }
+    summary=safe
+      ?`<strong>Good news!</strong> Your loan of ₹${fmt(loan)} is within the recommended limit of ₹${fmt(maxLoan30)}. Your safe EMI budget is ₹${fmt(maxEmi)}/mo.`
+      :`<strong>Caution:</strong> ₹${fmt(loan)} exceeds the recommended ₹${fmt(maxLoan30)} limit for your salary. Consider a smaller loan or a higher income source.`;
+
+  } else {
+    const stipend=get('sc_pl_stipend'),expenses=get('sc_pl_expenses'),months=get('sc_pl_months'),loan=get('sc_pl_loan');
+    if(!stipend||!expenses) return;
+    const surplus=stipend-expenses,totalSavable=surplus*(months||0);
+    const sipGrowth=surplus>0?surplus*0.5*((Math.pow(1.01,60)-1)/0.01):0;
+    const canCoverLoan=loan>0?totalSavable>=loan*0.15:true;
+    items=[
+      {label:'Monthly Surplus (Stipend − Expenses)',val:`₹${fmt(surplus)}`,type:surplus>0?'positive':'negative',color:surplus>0?'green':'red'},
+      {label:`Total Savable in ${months||0} months`,val:`₹${fmt(totalSavable)}`,type:'neutral',color:'blue'},
+      {label:'Projected SIP Value after 5 Years',val:`₹${fmt(sipGrowth)}`,type:'positive',color:'green'},
+    ];
+    if(loan>0){
+      items.push({label:'15% Down Payment Feasibility',val:canCoverLoan?'✅ Achievable':'⚠️ Needs more time',type:canCoverLoan?'positive':'negative',color:canCoverLoan?'green':'red'});
+    }
+    summary=surplus>0
+      ?`<strong>Good surplus!</strong> You have ₹${fmt(surplus)}/mo available. Investing ₹${fmt(surplus*0.5)}/mo in a SIP for 5 years at 12% could grow to ₹${fmt(sipGrowth)}.`
+      :`<strong>Tight budget.</strong> Your expenses exceed your stipend. Look for ways to reduce expenses by ₹${fmt(Math.abs(surplus))}/mo before taking any loan.`;
+  }
+
+  const resultEl=document.getElementById(`${p}_pl_result`);
+  if(!resultEl) return;
+  resultEl.innerHTML=`
+    <div class="savings-results-container">
+      ${items.map(item=>`
+        <div class="savings-result-item ${item.type}">
+          <span class="savings-result-label">${item.label}</span>
+          <span class="savings-result-val ${item.color}">${item.val}</span>
+        </div>`).join('')}
+      <div class="savings-divider"></div>
+      <div class="savings-summary-banner">💡 ${summary}</div>
+    </div>`;
+}
+
+// ══════════════════════════════════════════
+// PRE-LOAN CHECKLIST & TIMELINE
+// ══════════════════════════════════════════
+function renderChecklist(type){
+  const map={student:'s',employee:'e',scholar:'sc'};const p=map[type];const items=CHECKLISTS[type];
+  const el=document.getElementById(`${p}_checklist`);if(!el) return;
+  el.innerHTML=items.map(item=>{
+    const checked=checklistState[p][item.id]||false;
+    return `<div class="checklist-item ${checked?'checked':''}" id="ci_${p}_${item.id}" onclick="toggleCheck('${p}','${item.id}','${type}')">
+      <div class="check-box">${checked?'✓':''}</div>
+      <div><div class="check-title">${item.title}</div><div class="check-desc">${item.desc}</div></div>
+    </div>`;
+  }).join('');
+  updateProgress(p,type);renderTimeline(p,type);
+}
+function toggleCheck(p,id,ut){
+  checklistState[p][id]=!checklistState[p][id];
+  const el=document.getElementById(`ci_${p}_${id}`);
+  if(checklistState[p][id]){el.classList.add('checked');el.querySelector('.check-box').textContent='✓';}
+  else{el.classList.remove('checked');el.querySelector('.check-box').textContent='';}
+  updateProgress(p,ut);
+}
+function updateProgress(p,ut){
+  const items=CHECKLISTS[ut];const done=items.filter(i=>checklistState[p][i.id]).length;const pct=Math.round(done/items.length*100);
+  const bar=document.getElementById(`${p}_planBar`),lbl=document.getElementById(`${p}_planLabel`);
+  if(bar) bar.style.width=pct+"%";
+  if(lbl) lbl.textContent=`${done} / ${items.length} completed${done===items.length?' — Ready to Apply! 🎉':''}`;
+}
+function renderTimeline(p,ut){
+  const el=document.getElementById(`${p}_timeline`);if(!el) return;
+  const timelines={
+    student:[{month:"Month 1–2",dot:"#3b82f6",action:"Research & Compare Banks",detail:"Visit 3–4 banks. Collect fee structure from college."},{month:"Month 2–3",dot:"#8b5cf6",action:"Arrange Documents",detail:"Income proof, admission letter, collateral docs."},{month:"Month 3",dot:"#22c55e",action:"Apply for Loan",detail:"Submit to 2–3 banks simultaneously."},{month:"Month 4",dot:"#eab308",action:"Loan Sanction",detail:"Compare sanction letters. Negotiate processing fee waiver."},{month:"Post-Course",dot:"#22c55e",action:"Start Repayment",detail:"EMI begins 6 months after course or employment."}],
+    employee:[{month:"Month 1",dot:"#3b82f6",action:"Check & Improve CIBIL",detail:"Get free report. Dispute errors. Pay credit card dues."},{month:"Month 1–2",dot:"#8b5cf6",action:"Save Down Payment",detail:"Target 20–25% of property value."},{month:"Month 2–3",dot:"#22c55e",action:"Get Pre-Approval",detail:"Apply for in-principle approval from 2 banks."},{month:"Month 3–4",dot:"#eab308",action:"Select Property & Apply",detail:"Finalise property. Submit full loan application."},{month:"Month 4–5",dot:"#22c55e",action:"Loan Disbursal",detail:"Register property. First EMI starts next month."}],
+    scholar:[{month:"Now",dot:"#3b82f6",action:"Track Monthly Surplus",detail:"Record every expense. Find where you can save more."},{month:"Month 1–3",dot:"#8b5cf6",action:"Build Emergency Fund",detail:"Save 3 months of expenses in a savings account."},{month:"Month 3–6",dot:"#22c55e",action:"Start Small SIP",detail:"Begin ₹500–₹1000/mo SIP in index fund."},{month:"Month 6+",dot:"#eab308",action:"Apply for Loan If Needed",detail:"Take loan only for essential gap after fund is ready."},{month:"Post-PhD",dot:"#22c55e",action:"Accelerate Repayment",detail:"Use first salary increment to prepay extra EMIs."}]
+  };
+  el.innerHTML=(timelines[ut]||timelines.student).map((tm,i,arr)=>`<div class="timeline-item">
+    <div style="display:flex;flex-direction:column;align-items:center">
+      <div class="timeline-dot" style="background:${tm.dot}"></div>
+      ${i<arr.length-1?`<div class="timeline-line"></div>`:''}
+    </div>
+    <div class="timeline-content"><div class="timeline-month">${tm.month}</div><div class="timeline-action">${tm.action}</div><div class="timeline-detail">${tm.detail}</div></div>
+  </div>`).join('');
+}
+
+// ══════════════════════════════════════════
+// FIX 2b: IN-TAB CHATBOT — User-friendly redesign
+// ══════════════════════════════════════════
+function initChatbot(type){
+  const map={student:'s',employee:'e',scholar:'sc'};const p=map[type];
+  const qqs=document.getElementById(`${p}_quickqs`);
+  if(qqs&&!qqs.dataset.init){qqs.dataset.init="1";qqs.innerHTML=QUICK_QS[type].map(q=>`<button class="quick-q" onclick="quickAsk('${type}',\`${q.replace(/`/g,"'")}\`)">${q}</button>`).join('');}
+  const win=document.getElementById(`${p}_chatWindow`);
+  if(win&&!win.dataset.init){
+    win.dataset.init="1";
+    const greetings={
+      student:"👋 Hi! I'm your FinWell Student Advisor.\n\nI can help you with education loans, EMI calculations, bank selection, CIBIL scores, moratorium periods, and everything you need for your financial journey. What would you like to know?",
+      employee:"👋 Hi! I'm your FinWell Employee Advisor.\n\nI specialize in home and personal loans, salary-based planning, CIBIL improvement, prepayment strategies, and investment tips. Ask me anything!",
+      scholar:"👋 Hi! I'm your FinWell Scholar Advisor.\n\nI understand the unique challenges of research scholars — stipend management, fellowship loans, Section 80E benefits, and post-PhD transitions. How can I help?"
+    };
+    appendChatMsg(p,'ai',greetings[type]||greetings.student);
+  }
+}
+function quickAsk(type,q){
+  const map={student:'s',employee:'e',scholar:'sc'};const p=map[type];
+  const inp=document.getElementById(`${p}_chatInput`);if(inp){inp.value=q;sendChat(type);}
+}
+async function sendChat(type){
+  const map={student:'s',employee:'e',scholar:'sc'};const p=map[type];
+  const inp=document.getElementById(`${p}_chatInput`);const msg=inp.value.trim();if(!msg) return;
+  inp.value='';inp.disabled=true;
+  appendChatMsg(p,'user',msg);
+  chatHistoriesData[type].push({role:'user',content:msg});
+  showChatTyping(p);
+  const messages=chatHistoriesData[type].slice(-10).map(h=>({role:h.role,content:h.content}));
+  const reply=await callAIChat(messages,getChatSystem(type));
+  hideChatTyping(p);inp.disabled=false;
+  appendChatMsg(p,'ai',reply);
+  chatHistoriesData[type].push({role:'assistant',content:reply});
+}
+function appendChatMsg(p,role,text){
+  const win=document.getElementById(`${p}_chatWindow`);if(!win) return;
+  const time=new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+  const el=document.createElement('div');el.className=`chat-msg ${role}`;
+  el.innerHTML=`
+    <div class="chat-avatar ${role}">${role==='ai'?'🤖':'👤'}</div>
+    <div class="chat-msg-wrap">
+      <div class="chat-bubble">${text.replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}</div>
+      <div class="chat-time">${time}</div>
+    </div>`;
+  win.appendChild(el);win.scrollTop=win.scrollHeight;
+}
+let typingEls={};
+function showChatTyping(p){
+  const win=document.getElementById(`${p}_chatWindow`);if(!win) return;
+  const el=document.createElement('div');el.className='chat-msg ai';el.id=`typing_${p}`;
+  el.innerHTML=`<div class="chat-avatar ai">🤖</div><div class="chat-msg-wrap"><div class="chat-typing-bubble"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div></div>`;
+  win.appendChild(el);win.scrollTop=win.scrollHeight;typingEls[p]=el;
+}
+function hideChatTyping(p){if(typingEls[p]){typingEls[p].remove();delete typingEls[p];}}
+function chatKey(e,type){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat(type);}}
+
+// ══════════════════════════════════════════
+// FLOATING CHATBOT
+// ══════════════════════════════════════════
+const floatHistory=[];
+let floatTypingEl=null,floatOpen=false;
+
+function initFloatChat(){
+  const win=document.getElementById('floatMessages');
+  if(win.dataset.init) return; win.dataset.init="1";
+  appendFloatMsg('ai','👋 Hi! I\'m FinWell\'s 24/7 AI Support.\n\nI can help you with loans, EMI calculations, CIBIL scores, bank comparisons, and any financial questions — anytime, instantly!');
+  setTimeout(()=>{const b=document.getElementById('floatBadge');if(b&&!floatOpen){b.style.display='flex';}},2000);
+  const qs=['Calculate my EMI','Explain moratorium','Best bank for student?','What is DTI ratio?','How to improve CIBIL?'];
+  document.getElementById('floatQuickQs').innerHTML=qs.map(q=>`<button class="float-quick-q" onclick="floatQuickAsk('${q}')">${q}</button>`).join('');
+}
+function toggleFloatChat(){
+  floatOpen=!floatOpen;
+  const panel=document.getElementById('floatChatPanel');
+  const icon=document.getElementById('floatChatIcon');
+  const badge=document.getElementById('floatBadge');
+  panel.classList.toggle('open',floatOpen);
+  icon.textContent=floatOpen?'✕':'💬';
+  if(floatOpen){badge.style.display='none';document.getElementById('floatMessages').scrollTop=99999;}
+}
+function floatQuickAsk(q){document.getElementById('floatInput').value=q;sendFloatChat();}
+async function sendFloatChat(){
+  const inp=document.getElementById('floatInput');const msg=inp.value.trim();if(!msg) return;
+  inp.value='';inp.disabled=true;
+  appendFloatMsg('user',msg);
+  floatHistory.push({role:'user',content:msg});
+  showFloatTyping();
+  const messages=floatHistory.slice(-12).map(h=>({role:h.role,content:h.content}));
+  const reply=await callAIChat(messages,getChatSystem('general'));
+  hideFloatTyping();inp.disabled=false;
+  appendFloatMsg('ai',reply);
+  floatHistory.push({role:'assistant',content:reply});
+}
+function appendFloatMsg(role,text){
+  const win=document.getElementById('floatMessages');if(!win) return;
+  const time=new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+  const el=document.createElement('div');el.className=`float-msg ${role}`;
+  el.innerHTML=`
+    <div class="float-msg-avatar ${role}">${role==='ai'?'🤖':'👤'}</div>
+    <div class="float-msg-wrap">
+      <div class="float-bubble">${text.replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}</div>
+      <div class="float-time">${time}</div>
+    </div>`;
+  win.appendChild(el);win.scrollTop=win.scrollHeight;
+}
+function showFloatTyping(){
+  const win=document.getElementById('floatMessages');if(!win) return;
+  floatTypingEl=document.createElement('div');floatTypingEl.className='float-msg ai';
+  floatTypingEl.innerHTML=`<div class="float-msg-avatar ai">🤖</div><div class="float-msg-wrap"><div class="float-typing-bubble"><div class="float-typing-dot"></div><div class="float-typing-dot"></div><div class="float-typing-dot"></div></div></div>`;
+  win.appendChild(floatTypingEl);win.scrollTop=win.scrollHeight;
+}
+function hideFloatTyping(){if(floatTypingEl){floatTypingEl.remove();floatTypingEl=null;}}
+function floatChatKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendFloatChat();}}
+
+// ══════════════════════════════════════════
+// PDF
+// ══════════════════════════════════════════
+function downloadPDF(){
+  if(!currentResultId){toast("Please run an analysis first.","error");return;}
+  const resultEl=document.getElementById(currentResultId);
+  if(!resultEl?.innerText.trim()){toast("Please run an analysis first.","error");return;}
+  const {jsPDF}=window.jspdf;const pdf=new jsPDF();
+  pdf.setFillColor(37,99,235);pdf.rect(0,0,210,30,"F");
+  pdf.setTextColor(255,255,255);pdf.setFontSize(20);pdf.setFont("helvetica","bold");
+  pdf.text("FinWell AI — Financial Report",20,20);
+  pdf.setFontSize(10);pdf.setFont("helvetica","normal");
+  pdf.text(new Date().toLocaleDateString("en-IN",{day:"2-digit",month:"long",year:"numeric"}),150,20);
+  pdf.setTextColor(30,41,59);pdf.setFontSize(11);let y=42;
+  pdf.splitTextToSize(resultEl.innerText,170).forEach(line=>{if(y>270){pdf.addPage();y=20;}pdf.text(line,20,y);y+=6;});
+  pdf.setFontSize(9);pdf.setTextColor(148,163,184);pdf.text("Generated by FinWell AI",20,285);
+  pdf.save("FinWell_Report.pdf");toast("PDF downloaded!","success");
+}
+
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+function initBankGrids(){
+  renderBankGrid('s','student');renderBankGrid('e','employee');renderBankGrid('sc','scholar');
+  ['s','e','sc'].forEach(p=>{
+    const ut=p==='s'?'student':p==='e'?'employee':'scholar';
+    selectedBanks[p].add('sbi');document.getElementById(`chip_${p}_sbi`)?.classList.add('selected');
+    updateBankInfo(p,ut);
+  });
+}
+initBankGrids();
+</script>
+</body>
+</html>
